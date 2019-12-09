@@ -1,0 +1,133 @@
+/* NAV BAR */
+div.container-fluid div.row div.col-sm a {
+  color: white;
+}
+div.container-fluid div.row div.col-sm a:link {
+  color: white;
+  text-decoration: none;
+}
+div.container-fluid div.row div.col-sm a:visited {
+  color: white;
+  text-decoration: none;
+}
+div.container-fluid div.row div.col-sm a:hover {
+  color: #f55e00;
+  text-decoration: none;
+}
+div.container-fluid div.row div.col-sm a:active {
+  color: #f55e00;
+  text-decoration: none;
+}
+
+/* CAROUSEL */
+
+.carousel-inner {
+  width: 100%;
+  max-height: 200px !important;
+}
+
+/* CUSTOM BOOTSTRAP */
+
+/* CONTAINER BACKGROUND */
+.bg-quick {
+  background-color: #00304B;
+}
+
+/* CARD BORDER */
+.border-blue {
+  color: #00304B;
+}
+
+/* BUTTONS */
+.btn-sample {
+  color: #FFFFFF;
+  background-color: #F55E00;
+  border-color: #FFFFFF;
+}
+
+.btn-sample:hover,
+.btn-sample:focus,
+.btn-sample:active,
+.btn-sample.active,
+.open .dropdown-toggle.btn-sample {
+  color: #FFFFFF;
+  background-color: #00304B;
+  border-color: #FFFFFF;
+}
+
+.btn-sample:active,
+.btn-sample.active,
+.open .dropdown-toggle.btn-sample {
+  background-image: none;
+}
+
+.btn-sample.disabled,
+.btn-sample[disabled],
+fieldset[disabled] .btn-sample,
+.btn-sample.disabled:hover,
+.btn-sample[disabled]:hover,
+fieldset[disabled] .btn-sample:hover,
+.btn-sample.disabled:focus,
+.btn-sample[disabled]:focus,
+fieldset[disabled] .btn-sample:focus,
+.btn-sample.disabled:active,
+.btn-sample[disabled]:active,
+fieldset[disabled] .btn-sample:active,
+.btn-sample.disabled.active,
+.btn-sample[disabled].active,
+fieldset[disabled] .btn-sample.active {
+  background-color: #F55E00;
+  border-color: #FFFFFF;
+}
+
+.btn-sample .badge {
+  color: #F55E00;
+  background-color: #FFFFFF;
+}
+
+
+
+
+
+body {
+  font-family: Helvetica, Arial, Verdana, Georgia;
+  font-size: 16px;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  color: black;
+  background-color: white;
+}
+p.header{
+  text-align: left;
+  font-size: 30px;
+  border-bottom: 1px solid black;
+  font-weight: bold;
+}
+
+p{
+    text-align: left;
+}
+
+li{
+    text-align: left;
+}
+textarea{
+  display: block;
+  text-align: left;
+}
+textarea.format{
+    text-align: left;
+}
+input{
+    display: block;
+    text-align: left;
+}
+input.name{
+    color: black;
+}
+img {
+  max-width: 50%;
+  max-height: 100%;
+  float: left;
+}
