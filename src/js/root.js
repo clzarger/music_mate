@@ -5,12 +5,12 @@ const blobStream = require('blob-stream');
 const axios = require('axios');
 
 // ===================================== GET SONG DATA FROM SERVER =====================================
-function getSong(songName, songArtist){
-  return axios.get('https://eg5n058gdb.execute-api.us-east-1.amazonaws.com/dev/getSong?name=' + songName + '&artist=' + songArtist)
-    .then(response => {
-      return response.data.content.text;
-    });
-};
+// function getSong(songName, songArtist){
+//   return axios.get('https://eg5n058gdb.execute-api.us-east-1.amazonaws.com/dev/getSong?name=' + songName + '&artist=' + songArtist)
+//     .then(response => {
+//       return response.data.content.text;
+//     });
+// };
 
 // ===================================== TITLE CASE FUNCTION =====================================
 function toTitleCase(str) {
@@ -19,31 +19,74 @@ function toTitleCase(str) {
   });
 };
 
-// ===================================== TEST FUNCTION =====================================
-// window.loop = function () {
-//   var chordsInput1_v4 = 'HEY THIS [1] text for the first slide [2] second slide [3] third one [4] fourth one [5] fifth';
-//
-//   // find number of slides
-//   var numberOfSlides = (chordsInput1_v4.match(/\[/g) || []).length;
-//
-//   // Create array
-//   let arrayOfSlideStartIndices = [];
-//
-//   // create first index
-//   arrayOfSlideStartIndices[0] = -1;
-//
-//   // loop to find all indices & store in an array
-//   for (let i = 0; i < numberOfSlides; i++){
-//     arrayOfSlideStartIndices[i+1] = chordsInput1_v4.indexOf("[", arrayOfSlideStartIndices[i] + 1)
-//   };
-//
-// // DEBUG
-// console.log(arrayOfSlideStartIndices);
-//
-// };
+// ===================================== TEST FUNCTION for array =====================================
+  // window.loop = function () {
+  //   var chordsInput1_v4 = 'HEY THIS [1] text for the first slide [2] second slide [3] third one [4] fourth one [5] fifth';
+  //
+  //   // find number of slides
+  //   var numberOfSlides = (chordsInput1_v4.match(/\[/g) || []).length;
+  //
+  //   // Create array
+  //   let arrayOfSlideStartIndices = [];
+  //
+  //   // create first index
+  //   arrayOfSlideStartIndices[0] = -1;
+  //
+  //   // loop to find all indices & store in an array
+  //   for (let i = 0; i < numberOfSlides; i++){
+  //     arrayOfSlideStartIndices[i+1] = chordsInput1_v4.indexOf("[", arrayOfSlideStartIndices[i] + 1)
+  //   };
+  //
+  // // DEBUG
+  // console.log(arrayOfSlideStartIndices);
+  //
+  // };
+  //
+  //   Example ARRAY
+  //
+  //   var pptx = new PptxGenJS();
+  //   // now you get call your api for each title/artist and get the chords
+  //   // but getSong returns a promise, which means it's ASYNCHRONOUS. You'll
+  //   // want to get ALL of your chords before making the slideshow. You can send
+  //   // all of your requests in parallel by calling all three and putting the promise
+  //   // returned from each call into an array, like so:
+  //   const chordsPromises = [
+  //     getSong(title1, artist1),
+  //     getSong(title2, artist2),
+  //     getSong(title3, artist3),
+  //     getSong(title4, artist4)
+  //   ];
+  //
+  //   // then, you pass them to the Promise.all function
+  //   return Promise.all(chordsPromises).then(function(chords) {
+  //     chords.forEach(function(chordsInput, index) {
+  //       if(index == 0){
+  //         var titleIn = title1;
+  //         var artistIn = artist1;
+  //       } else if (index == 1){
+  //         var titleIn = title2;
+  //         var artistIn = artist2;
+  //       } else if (index == 2){
+  //         var titleIn = title3;
+  //         var artistIn = artist3;
+  //       } else {
+  //         var titleIn = title4;
+  //         var artistIn = artist4;
+  //       }
+  //       reformatSlides(pptx, titleIn, artistIn, chordsInput);
+  //     });
+  //   }).then(function() {
+  //     pptx.save('Lyrics Slideshow');
+  //     document.getElementById("slidesProgress").innerHTML = "Lyric Slideshow"
+  //   }).catch(function(e) {
+  //     console.error('Something terrible has happened!', e);
+  //   });
+  //
+  // };
 
-
+// =================================================================================================
 // ===================================== MUSICIAN CHORDS (PDF) =====================================
+// =================================================================================================
 function reformatChords(doc, songName, songArtist, input){
 
   // Reformat input with REGEX
@@ -88,19 +131,19 @@ window.chords = function () {
   document.getElementById("chordsProgress").innerHTML = "Creating File..."
 
   // Clean up user inputs
-  var title1Raw = document.getElementById("name1").value;
+  var title1Raw = document.getElementById("title1").value;
     var title1 = toTitleCase(title1Raw);
     var artist1Raw = document.getElementById("artist1").value;
     var artist1 = toTitleCase(artist1Raw);
-  var title2Raw = document.getElementById("name2").value;
+  var title2Raw = document.getElementById("title2").value;
     var title2 = toTitleCase(title2Raw);
     var artist2Raw = document.getElementById("artist2").value;
     var artist2 = toTitleCase(artist2Raw);
-  var title3Raw = document.getElementById("name3").value;
+  var title3Raw = document.getElementById("title3").value;
     var title3 = toTitleCase(title3Raw);
     var artist3Raw = document.getElementById("artist3").value;
     var artist3 = toTitleCase(artist3Raw);
-  var title4Raw = document.getElementById("name4").value;
+  var title4Raw = document.getElementById("title4").value;
     var title4 = toTitleCase(title4Raw);
     var artist4Raw = document.getElementById("artist4").value;
     var artist4 = toTitleCase(artist4Raw);
@@ -172,46 +215,49 @@ window.chords = function () {
 
 };
 
+// =================================================================================================
 // ===================================== LYRIC SLIDESHOW (PPT) =====================================
-function reformatSlides(pptx, songName, songArtist, input) {
+// =================================================================================================
+function reformatSlides(pptx, songName, songArtist, songLyrics) {
 
 // Reformat input with REGEX
-  //remove chords
-    var chordsInput1_v2 = input.replace(/(\[ch\].*\[*c*h*\])/gm, "");
-                // OLD REGEX: var chordsInput1_v2 = chordsInput1.replace(/\b([CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m|add)*[\d\/]*(?:[CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m|add)*[\d\/]*)*)(?=\s|$)(?!\w)/gm, "");
-                // remove blank lines where chords used to be
-                // var chordsInput1_v3 = chordsInput1_v2.replace(/^\s*[\r\n]*/gm, "");
+  // remove chords (just needed this and skipped the next two regex expressions when I used to scrape)
+    var songLyrics1 = songLyrics.replace(/(\[ch\].*\[*c*h*\])/gm, "");
+    // remove chords
+    var songLyrics1_v1 = songLyrics1.replace(/\b([CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m|add)*[\d\/]*(?:[CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m|add)*[\d\/]*)*)(?=\s|$)(?!\w)/gm, "");
+    // remove blank lines where chords used to be
+    var songLyrics1_v2 = songLyrics1_v1.replace(/^\s*[\r\n]*/gm, "");
   //remove song intro text
-    var chordsInput1_v3 = chordsInput1_v2.replace(/".+[\s\S].+.[\s\S].+.[\s\S].+.[\s\S]/gm, "");
+    var chordsInput1_v3 = songLyrics1_v2.replace(/".+[\s\S].+.[\s\S].+.[\s\S].+.[\s\S]/gm, "");
   //remove end of song " mark
-    var chordsInput1_v3_1 = chordsInput1_v3.replace(/"/gm, "");
+    var chordsInput1_v4 = chordsInput1_v3.replace(/"/gm, "");
   //remove riff tabs (if present)
-    var chordsInput1_v3_2 = chordsInput1_v3_1.replace(/.\|-.*/gm, "");
+    var chordsInput1_v5 = chordsInput1_v4.replace(/.\|-.*/gm, "");
   //remove [solo] & [instrumental]
-    var chordsInput1_v3_3 = chordsInput1_v3_2.replace(/\[Solo\]|\[solo\]|\[Instrumental\]|\[instrumental\]/gm, "");
+    var chordsInput1_v6 = chordsInput1_v5.replace(/\[Solo\]|\[solo\]|\[Instrumental\]|\[instrumental\]/gm, "");
   //remove extra spaces & blank lines
-    var chordsInput1_v3_4 = chordsInput1_v3_3.replace(/\r?\n\s*\n/gm, "\r\n");
+    var chordsInput1_v7 = chordsInput1_v6.replace(/\r?\n\s*\n/gm, "\r\n");
   //add a marker at the end of the input so the following code can find the last slide
-    var chordsInput1_v4 = chordsInput1_v3_4 + "[";
+    var chordsInput1_v8 = chordsInput1_v7 + "[";
   //find where to split slides
-    var slideOneStart1 = chordsInput1_v4.indexOf("[");
-    var slideTwoStart1 = chordsInput1_v4.indexOf("[", slideOneStart1 + 1);
-    var slideThreeStart1 = chordsInput1_v4.indexOf("[", slideTwoStart1 + 1);
-    var slideFourStart1 = chordsInput1_v4.indexOf("[", slideThreeStart1 + 1);
-    var slideFiveStart1 = chordsInput1_v4.indexOf("[", slideFourStart1 + 1);
-    var slideSixStart1 = chordsInput1_v4.indexOf("[", slideFiveStart1 + 1);
-    var slideSevenStart1 = chordsInput1_v4.indexOf("[", slideSixStart1 + 1);
-    var slideEightStart1 = chordsInput1_v4.indexOf("[", slideSevenStart1 + 1);
-    var slideNineStart1 = chordsInput1_v4.indexOf("[", slideEightStart1 + 1);
-    var slideTenStart1 = chordsInput1_v4.indexOf("[", slideNineStart1 + 1);
-    var slideElevenStart1 = chordsInput1_v4.indexOf("[", slideTenStart1 + 1);
-    var slideTwelveStart1 = chordsInput1_v4.indexOf("[", slideElevenStart1 + 1);
-    var slideThirteenStart1 = chordsInput1_v4.indexOf("[", slideTwelveStart1 + 1);
+    var slideOneStart1 = chordsInput1_v8.indexOf("[");
+    var slideTwoStart1 = chordsInput1_v8.indexOf("[", slideOneStart1 + 1);
+    var slideThreeStart1 = chordsInput1_v8.indexOf("[", slideTwoStart1 + 1);
+    var slideFourStart1 = chordsInput1_v8.indexOf("[", slideThreeStart1 + 1);
+    var slideFiveStart1 = chordsInput1_v8.indexOf("[", slideFourStart1 + 1);
+    var slideSixStart1 = chordsInput1_v8.indexOf("[", slideFiveStart1 + 1);
+    var slideSevenStart1 = chordsInput1_v8.indexOf("[", slideSixStart1 + 1);
+    var slideEightStart1 = chordsInput1_v8.indexOf("[", slideSevenStart1 + 1);
+    var slideNineStart1 = chordsInput1_v8.indexOf("[", slideEightStart1 + 1);
+    var slideTenStart1 = chordsInput1_v8.indexOf("[", slideNineStart1 + 1);
+    var slideElevenStart1 = chordsInput1_v8.indexOf("[", slideTenStart1 + 1);
+    var slideTwelveStart1 = chordsInput1_v8.indexOf("[", slideElevenStart1 + 1);
+    var slideThirteenStart1 = chordsInput1_v8.indexOf("[", slideTwelveStart1 + 1);
 
   // Change to a loop & store indices in an array!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     // // find number of slides
-    // var n = (chordsInput1_v4.match(/\[/g) || []).length;
+    // var n = (chordsInput1_v8.match(/\[/g) || []).length;
     //
     // // Create array
     // let arrayOfSlideStartIndices = []
@@ -221,7 +267,7 @@ function reformatSlides(pptx, songName, songArtist, input) {
     //
     // // loop to find all indices & store in an array
     // for (let i = 0, i < n, i++){
-    //   arrayOfSlideStartIndices[i+1] = chordsInput1_v4.indexOf("[", arrayOfSlideStartIndices[i] + 1)
+    //   arrayOfSlideStartIndices[i+1] = chordsInput1_v8.indexOf("[", arrayOfSlideStartIndices[i] + 1)
     // }
 
 
@@ -305,18 +351,18 @@ function reformatSlides(pptx, songName, songArtist, input) {
      }
 
   //split slides
-    var slideOneIsolated1 = chordsInput1_v4.slice(slideOneStart1, slideTwoStart1);
-    var slideTwoIsolated1 = chordsInput1_v4.slice(slideTwoStart1, slideThreeStart1);
-    var slideThreeIsolated1 = chordsInput1_v4.slice(slideThreeStart1, slideFourStart1);
-    var slideFourIsolated1 = chordsInput1_v4.slice(slideFourStart1, slideFiveStart1);
-    var slideFiveIsolated1 = chordsInput1_v4.slice(slideFiveStart1, slideSixStart1);
-    var slideSixIsolated1 = chordsInput1_v4.slice(slideSixStart1, slideSevenStart1);
-    var slideSevenIsolated1 = chordsInput1_v4.slice(slideSevenStart1, slideEightStart1);
-    var slideEightIsolated1 = chordsInput1_v4.slice(slideEightStart1, slideNineStart1);
-    var slideNineIsolated1 = chordsInput1_v4.slice(slideNineStart1, slideTenStart1);
-    var slideTenIsolated1 = chordsInput1_v4.slice(slideTenStart1, slideElevenStart1);
-    var slideElevenIsolated1 = chordsInput1_v4.slice(slideElevenStart1, slideTwelveStart1);
-    var slideTwelveIsolated1 = chordsInput1_v4.slice(slideTwelveStart1, slideThirteenStart1);
+    var slideOneIsolated1 = chordsInput1_v8.slice(slideOneStart1, slideTwoStart1);
+    var slideTwoIsolated1 = chordsInput1_v8.slice(slideTwoStart1, slideThreeStart1);
+    var slideThreeIsolated1 = chordsInput1_v8.slice(slideThreeStart1, slideFourStart1);
+    var slideFourIsolated1 = chordsInput1_v8.slice(slideFourStart1, slideFiveStart1);
+    var slideFiveIsolated1 = chordsInput1_v8.slice(slideFiveStart1, slideSixStart1);
+    var slideSixIsolated1 = chordsInput1_v8.slice(slideSixStart1, slideSevenStart1);
+    var slideSevenIsolated1 = chordsInput1_v8.slice(slideSevenStart1, slideEightStart1);
+    var slideEightIsolated1 = chordsInput1_v8.slice(slideEightStart1, slideNineStart1);
+    var slideNineIsolated1 = chordsInput1_v8.slice(slideNineStart1, slideTenStart1);
+    var slideTenIsolated1 = chordsInput1_v8.slice(slideTenStart1, slideElevenStart1);
+    var slideElevenIsolated1 = chordsInput1_v8.slice(slideElevenStart1, slideTwelveStart1);
+    var slideTwelveIsolated1 = chordsInput1_v8.slice(slideTwelveStart1, slideThirteenStart1);
   //remove verse & chorus headers
     var slideOneNeedsTrimmed1 = slideOneIsolated1.replace(/\[.*\]/g, "");
     var slideTwoNeedsTrimmed1 = slideTwoIsolated1.replace(/\[.*\]/g, "");
@@ -419,23 +465,31 @@ function reformatSlides(pptx, songName, songArtist, input) {
   };
 window.slides = function () {
   document.getElementById("slidesProgress").innerHTML = "Creating File..."
-  // inputs
-    var title1Raw = document.getElementById("name1").value;
+  // inputs from html side
+    // song 1
+      var title1Raw = document.getElementById("title1").value;
       var title1 = toTitleCase(title1Raw);
       var artist1Raw = document.getElementById("artist1").value;
       var artist1 = toTitleCase(artist1Raw);
-    var title2Raw = document.getElementById("name2").value;
+      var lyrics1 = document.getElementById("lyrics1").value;
+    // song 2
+      var title2Raw = document.getElementById("title2").value;
       var title2 = toTitleCase(title2Raw);
       var artist2Raw = document.getElementById("artist2").value;
       var artist2 = toTitleCase(artist2Raw);
-    var title3Raw = document.getElementById("name3").value;
+      var lyrics2 = document.getElementById("lyrics2").value;
+    // song 3
+      var title3Raw = document.getElementById("title3").value;
       var title3 = toTitleCase(title3Raw);
       var artist3Raw = document.getElementById("artist3").value;
       var artist3 = toTitleCase(artist3Raw);
-    var title4Raw = document.getElementById("name4").value;
+      var lyrics3 = document.getElementById("lyrics3").value;
+    // song 4
+      var title4Raw = document.getElementById("title4").value;
       var title4 = toTitleCase(title4Raw);
       var artist4Raw = document.getElementById("artist4").value;
       var artist4 = toTitleCase(artist4Raw);
+      var lyrics4 = document.getElementById("lyrics4").value;
   // create PPT variable
     var pptx = new PptxGenJS();
     // now you get call your api for each title/artist and get the chords
@@ -444,15 +498,23 @@ window.slides = function () {
   	// all of your requests in parallel by calling all three and putting the promise
   	// returned from each call into an array, like so:
     const chordsPromises = [
-      getSong(title1, artist1),
-  		getSong(title2, artist2),
-  		getSong(title3, artist3),
-      getSong(title4, artist4)
+      lyrics1,
+  		lyrics2,
+  		lyrics3,
+      lyrics4
   	];
+
+    // USED TO BE:
+    // const chordsPromises = [
+    //   getSong(title1, artist1),
+    //   getSong(title2, artist2),
+    //   getSong(title3, artist3),
+    //   getSong(title4, artist4)
+    // ];
 
   	// then, you pass them to the Promise.all function
   	return Promise.all(chordsPromises).then(function(chords) {
-  		chords.forEach(function(chordsInput, index) {
+  		chords.forEach(function(lyricsIn, index) {
         if(index == 0){
           var titleIn = title1;
           var artistIn = artist1;
@@ -466,7 +528,7 @@ window.slides = function () {
           var titleIn = title4;
           var artistIn = artist4;
         }
-  			reformatSlides(pptx, titleIn, artistIn, chordsInput);
+  			reformatSlides(pptx, titleIn, artistIn, lyricsIn);
   		});
   	}).then(function() {
   		pptx.save('Lyrics Slideshow');
@@ -477,7 +539,9 @@ window.slides = function () {
 
   };
 
-// ===================================== LYRIC HANDOUT (PDF) =====================================
+// =================================================================================================
+// ===================================== LYRIC HANDOUT (PDF) =======================================
+// =================================================================================================
 function reformatHandout(doc, songName, songArtist, input){
   //remove chords
     var input2 = input.replace(/(\[ch\].*\[*c*h*\])/gm, "");
@@ -518,19 +582,19 @@ window.handout = function () {
   // give user feedback
   document.getElementById("handoutProgress").innerHTML = "Creating File..."
   // inputs
-  var title1Raw = document.getElementById("name1").value;
+  var title1Raw = document.getElementById("title1").value;
     var title1 = toTitleCase(title1Raw);
     var artist1Raw = document.getElementById("artist1").value;
     var artist1 = toTitleCase(artist1Raw);
-  var title2Raw = document.getElementById("name2").value;
+  var title2Raw = document.getElementById("title2").value;
     var title2 = toTitleCase(title2Raw);
     var artist2Raw = document.getElementById("artist2").value;
     var artist2 = toTitleCase(artist2Raw);
-  var title3Raw = document.getElementById("name3").value;
+  var title3Raw = document.getElementById("title3").value;
     var title3 = toTitleCase(title3Raw);
     var artist3Raw = document.getElementById("artist3").value;
     var artist3 = toTitleCase(artist3Raw);
-  var title4Raw = document.getElementById("name4").value;
+  var title4Raw = document.getElementById("title4").value;
     var title4 = toTitleCase(title4Raw);
     var artist4Raw = document.getElementById("artist4").value;
     var artist4 = toTitleCase(artist4Raw);
@@ -592,16 +656,18 @@ window.handout = function () {
     });
   };
 
-// ===================================== LYRICS ON PAPER (DOC) TEST???? =====================================
+// =================================================================================================
+// ===================================== LYRICS ON PAPER (DOC) TEST???? ============================
+// =================================================================================================
 window.test = function () {
 
   var filename = 'Lyrics on Paper';
   // inputs
-    var title1 = document.getElementById("name1").value;
+    var title1 = document.getElementById("title1").value;
     var chordsInput1 = document.getElementById("chords1").value;
-    var title2 = document.getElementById("name2").value;
+    var title2 = document.getElementById("title2").value;
     var chordsInput2 = document.getElementById("chords2").value;
-    var title3 = document.getElementById("name3").value;
+    var title3 = document.getElementById("title3").value;
     var chordsInput3 = document.getElementById("chords3").value;
 
   //SONG ONE!!!!!!!!!!!!
@@ -1151,13 +1217,13 @@ window.test = function () {
   // window.slides = function () {
   //     var filename = 'Slides';
   //     // inputs
-  //     var title1 = document.getElementById("name1").value;
+  //     var title1 = document.getElementById("title1").value;
   //     var chordsInput1 = document.getElementById("chords1").value;
   //
-  //     var title2 = document.getElementById("name2").value;
+  //     var title2 = document.getElementById("title2").value;
   //     var chordsInput2 = document.getElementById("chords2").value;
   //
-  //     var title3 = document.getElementById("name3").value;
+  //     var title3 = document.getElementById("title3").value;
   //     var chordsInput3 = document.getElementById("chords3").value;
   //
   //     //reformat!!!!!!!!!!!!!!

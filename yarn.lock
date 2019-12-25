@@ -6718,15 +6718,6 @@ typedarray@^0.0.6, typedarray@~0.0.5:
   resolved "https://registry.yarnpkg.com/typedarray/-/typedarray-0.0.6.tgz#867ac74e3864187b1d3d47d996a78ec5c8830777"
   integrity sha1-hnrHTjhkGHsdPUfZlqeOxciDB3c=
 
-ultimate-guitar-scraper@1.1.1:
-  version "1.1.1"
-  resolved "https://registry.yarnpkg.com/ultimate-guitar-scraper/-/ultimate-guitar-scraper-1.1.1.tgz#67e4511fa63b9ab0936e41a17cce980c7df95611"
-  integrity sha512-LI8L90/vXw4fsfawGAzQX1R1IRSwMWGm2dIMwaI6fLIHFxcMHwBWxM8WJxhcXXanywFIKqcKv9vsxUzeTajffw==
-  dependencies:
-    cheerio "^0.22.0"
-    json5 "^0.5.1"
-    request "^2.81.0"
-
 umd@^3.0.0:
   version "3.0.3"
   resolved "https://registry.yarnpkg.com/umd/-/umd-3.0.3.tgz#aa9fe653c42b9097678489c01000acb69f0b26cf"
