@@ -4,13 +4,6 @@ const PDFDocument = require('pdfkit');
 const blobStream = require('blob-stream');
 const axios = require('axios');
 
-// ===================================== GET SONG DATA FROM SERVER =====================================
-// function getSong(songName, songArtist){
-//   return axios.get('https://eg5n058gdb.execute-api.us-east-1.amazonaws.com/dev/getSong?name=' + songName + '&artist=' + songArtist)
-//     .then(response => {
-//       return response.data.content.text;
-//     });
-// };
 
 // ===================================== TITLE CASE FUNCTION =====================================
 function toTitleCase(str) {
@@ -20,545 +13,328 @@ function toTitleCase(str) {
 };
 
 // ===================================== TEST FUNCTION for array =====================================
-  // window.loop = function () {
-  //   var chordsInput1_v4 = 'HEY THIS [1] text for the first slide [2] second slide [3] third one [4] fourth one [5] fifth';
-  //
-  //   // find number of slides
-  //   var numberOfSlides = (chordsInput1_v4.match(/\[/g) || []).length;
-  //
-  //   // Create array
-  //   let arrayOfSlideStartIndices = [];
-  //
-  //   // create first index
-  //   arrayOfSlideStartIndices[0] = -1;
-  //
-  //   // loop to find all indices & store in an array
-  //   for (let i = 0; i < numberOfSlides; i++){
-  //     arrayOfSlideStartIndices[i+1] = chordsInput1_v4.indexOf("[", arrayOfSlideStartIndices[i] + 1)
-  //   };
-  //
-  // // DEBUG
-  // console.log(arrayOfSlideStartIndices);
-  //
-  // };
-  //
-  //   Example ARRAY
-  //
-  //   var pptx = new PptxGenJS();
-  //   // now you get call your api for each title/artist and get the chords
-  //   // but getSong returns a promise, which means it's ASYNCHRONOUS. You'll
-  //   // want to get ALL of your chords before making the slideshow. You can send
-  //   // all of your requests in parallel by calling all three and putting the promise
-  //   // returned from each call into an array, like so:
-  //   const chordsPromises = [
-  //     getSong(title1, artist1),
-  //     getSong(title2, artist2),
-  //     getSong(title3, artist3),
-  //     getSong(title4, artist4)
-  //   ];
-  //
-  //   // then, you pass them to the Promise.all function
-  //   return Promise.all(chordsPromises).then(function(chords) {
-  //     chords.forEach(function(chordsInput, index) {
-  //       if(index == 0){
-  //         var titleIn = title1;
-  //         var artistIn = artist1;
-  //       } else if (index == 1){
-  //         var titleIn = title2;
-  //         var artistIn = artist2;
-  //       } else if (index == 2){
-  //         var titleIn = title3;
-  //         var artistIn = artist3;
-  //       } else {
-  //         var titleIn = title4;
-  //         var artistIn = artist4;
-  //       }
-  //       reformatSlides(pptx, titleIn, artistIn, chordsInput);
-  //     });
-  //   }).then(function() {
-  //     pptx.save('Lyrics Slideshow');
-  //     document.getElementById("slidesProgress").innerHTML = "Lyric Slideshow"
-  //   }).catch(function(e) {
-  //     console.error('Something terrible has happened!', e);
-  //   });
-  //
-  // };
+window.loop = function () {
+    var songLyrics_v8 = 'HEY THIS [1] text for the first slide [2] second slide [3] third one [4] fourth one [5] fifth';
 
-// =================================================================================================
-// ===================================== MUSICIAN CHORDS (PDF) =====================================
-// =================================================================================================
-function reformatChords(doc, songName, songArtist, input){
+  // find number of slides
+    var numberOfSlides = (songLyrics_v8.match(/\[/g) || []).length;
 
-  // Reformat input with REGEX
-    // var input ="Cornerstone by Hillsong\n\n[Intro]\n\n[ch]C[\/ch]   [ch]Am[\/ch]   [ch]F[\/ch]  [ch]G[\/ch]\n\n\n[Verse 1]\n\n[ch]C[\/ch]\nMy hope is built on nothing less\n[ch]F[\/ch]                     [ch]G[\/ch]\nThan Jesus\' blood and righteousness\n[ch]Am[\/ch]"
-    // remove song intro text
-    // var input2 = input.replace(/".+[\s\S].+.[\s\S].+.[\s\S].+.[\s\S]/gm, "");
-    // remove Ð
-    // var input3 = input2.replace(/\n\n\n/gm, "\n");
-    // var input6 = input3.replace(/\n\n/gm, "\n");
-    // remove [ch] & [/ch]
-      var input2 = input.replace(/\[ch\]/gm, "");
-      var input3 = input2.replace(/\[\/ch\]/gm, "");
-    //remove Ð
-      var input4 = input3.replace(/\r\n/gm, "\n");
-    // remove end of song " mark
-    // var input7 = input6.replace(/"/gm, "");
-    // remove riff tabs (if present)
-    // var input9 = input7.replace(/.\|-.*/gm, "");
-    // remove extra spaces & blank lines
-    // var input9 = input8.replace(/\r?\n\s*\n/gm, "\r\n");
+  // create arrays & first index (javascript arrays use 0 for the first entry. I set it to -1 & skip it)
+    let slideStartIndicesArr = [-1];
+    let slideArr_w_whitespace_headers = [-1];
+    let slideArr_w_whitespace = [-1];
+    let slideArr = [-1];
 
-  // Create pages
-  doc.addPage({
-    // layout: 'landscape',
-    margin: 25,
-  });
-    doc.font('Courier-Bold');
-    doc.fontSize(13);
-    doc.text(songName + " - " + songArtist, {
-      columns: 1,
-    });
-      doc.moveDown();
-        doc.font('Courier');
-        doc.fontSize(12);
-        doc.text(input4, {
-          columns: 1,
-        });
+  // find slide start indices based on brackets (and store in array)
+    for (let i = 0; i < numberOfSlides; i++){
+      slideStartIndicesArr[i+1] = songLyrics_v8.indexOf("[", slideStartIndicesArr[i] + 1)
+    };  //i didn't put this loop in the next one because the isolate slides piece needs to have all indices ready
+
+  // sort input lyrics into slides & cleanup
+  for (let i = 0; i < numberOfSlides; i++){
+    // isolate slide lyrics (separate slides based on indices)
+    slideArr_w_whitespace_headers[i+1] = songLyrics_v8.slice(slideStartIndicesArr[i+1], slideStartIndicesArr[i+2])
+    // remove verse & chorus headers
+    slideArr_w_whitespace[i+1] = slideArr_w_whitespace_headers[i+1].replace(/\[.*\]/g, "");
+    // remove white space
+    slideArr[i+1] = slideArr_w_whitespace[i+1].trim();
     };
-window.chords = function () {
 
-  // Give user feedback
-  document.getElementById("chordsProgress").innerHTML = "Creating File..."
+// DEBUG
+console.log(slideStartIndicesArr);
+console.log(slideArr_w_whitespace_headers);
+console.log(slideArr_w_whitespace);
+console.log(slideArr);
 
-  // Clean up user inputs
-  var title1Raw = document.getElementById("title1").value;
-    var title1 = toTitleCase(title1Raw);
-    var artist1Raw = document.getElementById("artist1").value;
-    var artist1 = toTitleCase(artist1Raw);
-  var title2Raw = document.getElementById("title2").value;
-    var title2 = toTitleCase(title2Raw);
-    var artist2Raw = document.getElementById("artist2").value;
-    var artist2 = toTitleCase(artist2Raw);
-  var title3Raw = document.getElementById("title3").value;
-    var title3 = toTitleCase(title3Raw);
-    var artist3Raw = document.getElementById("artist3").value;
-    var artist3 = toTitleCase(artist3Raw);
-  var title4Raw = document.getElementById("title4").value;
-    var title4 = toTitleCase(title4Raw);
-    var artist4Raw = document.getElementById("artist4").value;
-    var artist4 = toTitleCase(artist4Raw);
+//create pptx variable
+var pptx = new PptxGenJS();
 
-  // Create blank PDF document
-  var doc = new PDFDocument(
-    {
-      autoFirstPage: false,
-      // layout: 'landscape',
-      margin: 25,
-    }
-  );
+// create blank pptx file
+pptx.setLayout('LAYOUT_4x3');
 
-  // Change blank PDF document to a blob stream
-  window.stream = doc.pipe(blobStream());
+//fake inputs
+var songName = 'test';
+var songArtist = 'shoooot';
 
-  // Get song from Ultimate Guitar with "getSong" function
-  const chordsPromises = [
-		getSong(title1, artist1),
-		getSong(title2, artist2),
-		getSong(title3, artist3),
-    getSong(title4, artist4)
-	];
+if (isNaN('Title')) {
+    //Title Slide
+    var pptxTitleSlide = pptx.addNewSlide({ bkgd: '000000' });
+    pptxTitleSlide.addText(songName, {x: 1.25, y: 3.5, font_size: 40, font_face: 'Helvetica', color: 'ffffff', align: 'center', valign: 'middle'});
+    pptxTitleSlide.addText(songArtist, {x: 1.25, y: 4.5, font_size: 20, font_face: 'Helvetica', color: 'ffffff', align: 'center', valign: 'middle'});
 
-  // Use promise to loop through "reformatChords" function
-	return Promise.all(chordsPromises).then(function(chords) {
-		chords.forEach(function(chordsInput, index) {
-      if(index == 0){
-        var titleIn = title1;
-        var artistIn = artist1;
-      } else if (index == 1){
-        var titleIn = title2;
-        var artistIn = artist2;
-      } else if (index == 2){
-        var titleIn = title3;
-        var artistIn = artist3;
-      } else {
-        var titleIn = title4;
-        var artistIn = artist4;
-      }
-			reformatChords(doc, titleIn, artistIn, chordsInput);
-		});
-	}).then(function() {
-              doc.end();
+    // loop
+      for (let i = 0; i < numberOfSlides; i++){
+        var pptxLyricSlides = pptx.addNewSlide({ bkgd: '000000' });
+        pptxLyricSlides.addText(slideArr[i+1], {x: 1.25, y: '3%', font_size: 30, font_face: 'Helvetica', color: 'ffffff', align: 'center', valign: 'top'});
+      };
+  };
 
-          // Downloader
-          var filename = 'Musician Chords';
-          stream.on('finish', function () {
-            var pom = document.createElement('a');
-            pom.setAttribute('href', stream.toBlobURL('application/pdf'));
-            pom.setAttribute('download', filename);
-            if (document.createEvent) {
-                var event = document.createEvent('MouseEvents');
-                event.initEvent('click', true, true);
-                pom.dispatchEvent(event);
-              }
-              else {
-                  pom.click();
-              }
-          })
+  // this is done in the full loop below. just here for testing
+  pptx.save('Lyrics Slideshow');
 
-          // Return user feedback button change to normal
-          document.getElementById("chordsProgress").innerHTML = "Musician Chords"
 
-          // Alert user if error
-        	}).catch(function(e) {
-        	console.error('Something terrible has happened!', e);
-        });
+  };
 
-};
 
 // =================================================================================================
 // ===================================== LYRIC SLIDESHOW (PPT) =====================================
 // =================================================================================================
 function reformatSlides(pptx, songName, songArtist, songLyrics) {
+    // Reformat input with REGEX (potentially helpful regex:\n.*\n.*\n.*$)
+      // remove chords (when I used ugs, just needed this and skipped the next two regex expressions)
+      var songLyrics_v1 = songLyrics.replace(/(\[ch\].*\[*c*h*\])/gm, "");
+        // remove chords
+        var songLyrics_v2 = songLyrics_v1.replace(/\b([CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m|add)*[\d\/]*(?:[CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m|add)*[\d\/]*)*)(?=\s|$)(?!\w)/gm, "");
+        // remove blank lines where chords used to be
+        var songLyrics_v3 = songLyrics_v2.replace(/^\s*[\r\n]*/gm, "");
+      //remove song intro text
+      var songLyrics_v4 = songLyrics_v3.replace(/".+[\s\S].+.[\s\S].+.[\s\S].+.[\s\S]/gm, "");
+      //remove end of song " mark
+      var songLyrics_v5 = songLyrics_v4.replace(/"/gm, "");
+      //remove riff tabs (if present)
+      var songLyrics_v6 = songLyrics_v5.replace(/.\|-.*/gm, "");
+      //remove [solo] & [instrumental]
+      var songLyrics_v7 = songLyrics_v6.replace(/\[Solo\]|\[solo\]|\[Instrumental\]|\[instrumental\]/gm, "");
+      //remove extra spaces & blank lines
+      var songLyrics_v8 = songLyrics_v7.replace(/\r?\n\s*\n/gm, "\r\n");
 
-// Reformat input with REGEX
-  // remove chords (just needed this and skipped the next two regex expressions when I used to scrape)
-    var songLyrics1 = songLyrics.replace(/(\[ch\].*\[*c*h*\])/gm, "");
-    // remove chords
-    var songLyrics1_v1 = songLyrics1.replace(/\b([CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m|add)*[\d\/]*(?:[CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m|add)*[\d\/]*)*)(?=\s|$)(?!\w)/gm, "");
-    // remove blank lines where chords used to be
-    var songLyrics1_v2 = songLyrics1_v1.replace(/^\s*[\r\n]*/gm, "");
-  //remove song intro text
-    var chordsInput1_v3 = songLyrics1_v2.replace(/".+[\s\S].+.[\s\S].+.[\s\S].+.[\s\S]/gm, "");
-  //remove end of song " mark
-    var chordsInput1_v4 = chordsInput1_v3.replace(/"/gm, "");
-  //remove riff tabs (if present)
-    var chordsInput1_v5 = chordsInput1_v4.replace(/.\|-.*/gm, "");
-  //remove [solo] & [instrumental]
-    var chordsInput1_v6 = chordsInput1_v5.replace(/\[Solo\]|\[solo\]|\[Instrumental\]|\[instrumental\]/gm, "");
-  //remove extra spaces & blank lines
-    var chordsInput1_v7 = chordsInput1_v6.replace(/\r?\n\s*\n/gm, "\r\n");
-  //add a marker at the end of the input so the following code can find the last slide
-    var chordsInput1_v8 = chordsInput1_v7 + "[";
-  //find where to split slides
-    var slideOneStart1 = chordsInput1_v8.indexOf("[");
-    var slideTwoStart1 = chordsInput1_v8.indexOf("[", slideOneStart1 + 1);
-    var slideThreeStart1 = chordsInput1_v8.indexOf("[", slideTwoStart1 + 1);
-    var slideFourStart1 = chordsInput1_v8.indexOf("[", slideThreeStart1 + 1);
-    var slideFiveStart1 = chordsInput1_v8.indexOf("[", slideFourStart1 + 1);
-    var slideSixStart1 = chordsInput1_v8.indexOf("[", slideFiveStart1 + 1);
-    var slideSevenStart1 = chordsInput1_v8.indexOf("[", slideSixStart1 + 1);
-    var slideEightStart1 = chordsInput1_v8.indexOf("[", slideSevenStart1 + 1);
-    var slideNineStart1 = chordsInput1_v8.indexOf("[", slideEightStart1 + 1);
-    var slideTenStart1 = chordsInput1_v8.indexOf("[", slideNineStart1 + 1);
-    var slideElevenStart1 = chordsInput1_v8.indexOf("[", slideTenStart1 + 1);
-    var slideTwelveStart1 = chordsInput1_v8.indexOf("[", slideElevenStart1 + 1);
-    var slideThirteenStart1 = chordsInput1_v8.indexOf("[", slideTwelveStart1 + 1);
+    // find number of slides
+      var numberOfSlides = (songLyrics_v8.match(/\[/g) || []).length;
 
-  // Change to a loop & store indices in an array!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // create arrays & first index (javascript arrays use 0 for the first entry. I set it to -1 & skip it)
+      let slideStartIndicesArr = [-1];
+      let slideArr_w_whitespace_headers = [-1];
+      let slideArr_w_whitespace = [-1];
+      let slideArr = [-1];
 
-    // // find number of slides
-    // var n = (chordsInput1_v8.match(/\[/g) || []).length;
-    //
-    // // Create array
-    // let arrayOfSlideStartIndices = []
-    //
-    // // create first index
-    // arrayOfSlideStartIndices[0] = -1
-    //
-    // // loop to find all indices & store in an array
-    // for (let i = 0, i < n, i++){
-    //   arrayOfSlideStartIndices[i+1] = chordsInput1_v8.indexOf("[", arrayOfSlideStartIndices[i] + 1)
-    // }
+    // find slide start indices based on brackets (and store in array)
+      for (let i = 0; i < numberOfSlides; i++){
+        slideStartIndicesArr[i+1] = songLyrics_v8.indexOf("[", slideStartIndicesArr[i] + 1)
+      };  //i didn't put this loop in the next one because the isolate slides piece needs to have all indices ready
 
+    // sort input lyrics into slides & cleanup
+    for (let i = 0; i < numberOfSlides; i++){
+      // isolate slide lyrics (separate slides based on indices)
+      slideArr_w_whitespace_headers[i+1] = songLyrics_v8.slice(slideStartIndicesArr[i+1], slideStartIndicesArr[i+2])
+      // remove verse & chorus headers
+      slideArr_w_whitespace[i+1] = slideArr_w_whitespace_headers[i+1].replace(/\[.*\]/g, "");
+      // remove white space
+      slideArr[i+1] = slideArr_w_whitespace[i+1].trim();
+    };
 
+    // split up slides that have too many lines, loads in one slide at a time using: slideArr[i+1]
+    for (let i = 0; i < numberOfSlides; i++){
+      //debug
+      console.log('loop start (loading in one slide)');
+      // find the number of new line characters ( "\n" )
+      var numberOfNewLines = (slideArr[i+1].match(/\n/g) || []).length;
+      // add one to find the actual number of lines (since the last line doesn't have a '\n', this step creates a more intuitive variable to work with)
+      var numberOfLines = numberOfNewLines + 1;
+      // split based on number of lines on the slide
+      if (numberOfLines >= 6) {
+        // split up the loaded slide into an array by new line
+        var oneSlide_SplitByNewline_Arr = slideArr[i+1].split(/\n/g);
+       // Divide input array into chunks of the requested size
+        function chunkArray(myArray, chunk_size){
+          var index = 0;
+          var arrayLength = myArray.length;
+          var tempArray = [];
+          for (index = 0; index < arrayLength; index += chunk_size) {
+            var myChunk = myArray.slice(index, index + chunk_size);
+            // Do something if you want with the group
+            tempArray.push(myChunk);
+          };
+          return tempArray;
+        };
+        // find # of slides needed by dividing number of lines by 5, then taking the ceiling
+        var numberOfSlidesNeeded = Math.ceil(numberOfLines/5);
+        // find # of lines per slide
+        var linesPerSlide = Math.ceil(numberOfLines/numberOfSlidesNeeded);
+        // chunk into groups that are equal to the number of lines per slide
+        var chunkedArrayNew = chunkArray(oneSlide_SplitByNewline_Arr, linesPerSlide);
+        // array to string function
+        function arrayToString(array) {
+          var string = "";
+          for (let j = 0; j < array.length; j++){
+            var string = string + array[j] + '\n';
+          };
+          return string = string.slice(0, -1);
+        };
+        // convert arrays (so they can properly be added to the master slides aka slideArr)
+        // if you don't do this, it adds the array as a single element, which breaks things
+        var chunkedStringNew = [];
+        for (let k = 0; k < chunkedArrayNew.length; k++){
+          chunkedStringNew[k] = arrayToString(chunkedArrayNew[k]);
+        };
+        // at current index, remove 0 elements, then add the text to that position
+        for (let l = 0; l < chunkedStringNew.length; l++){
+          slideArr.splice(i+1+l, 0, chunkedStringNew[l]);
+        };
+        // skip ahead of the two split slides I just inserted & remove the old combined one
+        slideArr.splice(i+1+chunkedStringNew.length, 1);
+        // update numberOfSlides in the full deck. Otherwise, this loop will get messed up
+        var numberOfSlides = numberOfSlides + numberOfSlidesNeeded - 1;
+      };
+    };
 
+    //debug
+    console.log('finished slide arrary', slideArr, '\n');
 
-  //prevent error where it prints duplicate slides
-     if (slideThreeStart1<0) {
-       slideFourStart1 = -1
-       slideFiveStart1 = -1
-       slideSixStart1 = -1
-       slideSevenStart1 = -1
-       slideEightStart1 = -1
-       slideNineStart1 = -1
-       slideTenStart1 = -1
-       slideElevenStart1 = -1
-       slideTwelveStart1 = -1
-       slideThirteenStart1 = -1
-     }
-     if (slideFourStart1<0) {
-       slideFiveStart1 = -1
-       slideSixStart1 = -1
-       slideSevenStart1 = -1
-       slideEightStart1 = -1
-       slideNineStart1 = -1
-       slideTenStart1 = -1
-       slideElevenStart1 = -1
-       slideTwelveStart1 = -1
-       slideThirteenStart1 = -1
-     }
-     if (slideFiveStart1<0) {
-       slideSixStart1 = -1
-       slideSevenStart1 = -1
-       slideEightStart1 = -1
-       slideNineStart1 = -1
-       slideTenStart1 = -1
-       slideElevenStart1 = -1
-       slideTwelveStart1 = -1
-       slideThirteenStart1 = -1
-     }
-     if (slideSixStart1<0) {
-       slideSevenStart1 = -1
-       slideEightStart1 = -1
-       slideNineStart1 = -1
-       slideTenStart1 = -1
-       slideElevenStart1 = -1
-       slideTwelveStart1 = -1
-       slideThirteenStart1 = -1
-     }
-     if (slideSevenStart1<0) {
-       slideEightStart1 = -1
-       slideNineStart1 = -1
-       slideTenStart1 = -1
-       slideElevenStart1 = -1
-       slideTwelveStart1 = -1
-       slideThirteenStart1 = -1
-     }
-     if (slideEightStart1<0) {
-       slideNineStart1 = -1
-       slideTenStart1 = -1
-       slideElevenStart1 = -1
-       slideTwelveStart1 = -1
-       slideThirteenStart1 = -1
-     }
-     if (slideNineStart1<0) {
-       slideTenStart1 = -1
-       slideElevenStart1 = -1
-       slideTwelveStart1 = -1
-       slideThirteenStart1 = -1
-     }
-     if (slideTenStart1<0) {
-       slideElevenStart1 = -1
-       slideTwelveStart1 = -1
-       slideThirteenStart1 = -1
-     }
-     if (slideElevenStart1<0) {
-       slideTwelveStart1 = -1
-       slideThirteenStart1 = -1
-     }
-     if (slideTwelveStart1<0) {
-       slideThirteenStart1 = -1
-     }
-
-  //split slides
-    var slideOneIsolated1 = chordsInput1_v8.slice(slideOneStart1, slideTwoStart1);
-    var slideTwoIsolated1 = chordsInput1_v8.slice(slideTwoStart1, slideThreeStart1);
-    var slideThreeIsolated1 = chordsInput1_v8.slice(slideThreeStart1, slideFourStart1);
-    var slideFourIsolated1 = chordsInput1_v8.slice(slideFourStart1, slideFiveStart1);
-    var slideFiveIsolated1 = chordsInput1_v8.slice(slideFiveStart1, slideSixStart1);
-    var slideSixIsolated1 = chordsInput1_v8.slice(slideSixStart1, slideSevenStart1);
-    var slideSevenIsolated1 = chordsInput1_v8.slice(slideSevenStart1, slideEightStart1);
-    var slideEightIsolated1 = chordsInput1_v8.slice(slideEightStart1, slideNineStart1);
-    var slideNineIsolated1 = chordsInput1_v8.slice(slideNineStart1, slideTenStart1);
-    var slideTenIsolated1 = chordsInput1_v8.slice(slideTenStart1, slideElevenStart1);
-    var slideElevenIsolated1 = chordsInput1_v8.slice(slideElevenStart1, slideTwelveStart1);
-    var slideTwelveIsolated1 = chordsInput1_v8.slice(slideTwelveStart1, slideThirteenStart1);
-  //remove verse & chorus headers
-    var slideOneNeedsTrimmed1 = slideOneIsolated1.replace(/\[.*\]/g, "");
-    var slideTwoNeedsTrimmed1 = slideTwoIsolated1.replace(/\[.*\]/g, "");
-    var slideThreeNeedsTrimmed1 = slideThreeIsolated1.replace(/\[.*\]/g, "");
-    var slideFourNeedsTrimmed1 = slideFourIsolated1.replace(/\[.*\]/g, "");
-    var slideFiveNeedsTrimmed1 = slideFiveIsolated1.replace(/\[.*\]/g, "");
-    var slideSixNeedsTrimmed1 = slideSixIsolated1.replace(/\[.*\]/g, "");
-    var slideSevenNeedsTrimmed1 = slideSevenIsolated1.replace(/\[.*\]/g, "");
-    var slideEightNeedsTrimmed1 = slideEightIsolated1.replace(/\[.*\]/g, "");
-    var slideNineNeedsTrimmed1 = slideNineIsolated1.replace(/\[.*\]/g, "");
-    var slideTenNeedsTrimmed1 = slideTenIsolated1.replace(/\[.*\]/g, "");
-    var slideElevenNeedsTrimmed1 = slideElevenIsolated1.replace(/\[.*\]/g, "");
-    var slideTwelveNeedsTrimmed1 = slideTwelveIsolated1.replace(/\[.*\]/g, "");
-  //trim white space
-    var slideOne1 = slideOneNeedsTrimmed1.trim();
-    var slideTwo1 = slideTwoNeedsTrimmed1.trim();
-    var slideThree1 = slideThreeNeedsTrimmed1.trim();
-    var slideFour1 = slideFourNeedsTrimmed1.trim();
-    var slideFive1 = slideFiveNeedsTrimmed1.trim();
-    var slideSix1 = slideSixNeedsTrimmed1.trim();
-    var slideSeven1 = slideSevenNeedsTrimmed1.trim();
-    var slideEight1 = slideEightNeedsTrimmed1.trim();
-    var slideNine1 = slideNineNeedsTrimmed1.trim();
-    var slideTen1 = slideTenNeedsTrimmed1.trim();
-    var slideEleven1 = slideElevenNeedsTrimmed1.trim();
-    var slideTwelve1 = slideTwelveNeedsTrimmed1.trim();
-
-  //pptx Generator
-    // var pptx = new PptxGenJS();
+    // create blank pptx file
     pptx.setLayout('LAYOUT_4x3');
-  //Song 1
-  //Title Slide
 
-    if (isNaN('Title')) {
-      var pptxTitle1 = pptx.addNewSlide({ bkgd: '000000' });
-      pptxTitle1.addText(songName, {x: 1.25, y: 3.5, font_size: 40, font_face: 'Helvetica', color: 'ffffff', align: 'center', valign: 'middle'});
-      pptxTitle1.addText(songArtist, {x: 1.25, y: 4.5, font_size: 20, font_face: 'Helvetica', color: 'ffffff', align: 'center', valign: 'middle'});
+      if (isNaN('Title')) {
+        // create title slide
+        var pptxTitleSlide = pptx.addNewSlide({ bkgd: '000000' });
+        pptxTitleSlide.addText(songName, {x: 1.25, y: 3.5, font_size: 40, font_face: 'Helvetica', color: 'ffffff', align: 'center', valign: 'middle'});
+        pptxTitleSlide.addText(songArtist, {x: 1.25, y: 4.5, font_size: 20, font_face: 'Helvetica', color: 'ffffff', align: 'center', valign: 'middle'});
 
-  //Slide One
-    if (slideTwoStart1>0) {
-    var pptxOne1 = pptx.addNewSlide({ bkgd: '000000' });
-    pptxOne1.addText(slideOne1, {x: 1.25, y: '3%', font_size: 30, font_face: 'Helvetica', color: 'ffffff', align: 'center', valign: 'top'});
-    }
-  //Slide Two
-    if (slideThreeStart1>0) {
-    var pptxTwo1 = pptx.addNewSlide({ bkgd: '000000' });
-    pptxTwo1.addText(slideTwo1, {x: 1.25, y: '3%', font_size: 30, font_face: 'Helvetica', color: 'ffffff', align: 'center', valign: 'top'});
-    }
-  //Slide Three
-    if (slideFourStart1>0) {
-    var pptxThree1 = pptx.addNewSlide({ bkgd: '000000' });
-    pptxThree1.addText(slideThree1, {x: 1.25, y: '3%', font_size: 30, font_face: 'Helvetica', color: 'ffffff', align: 'center', valign: 'top'});
-    }
-  //Slide Four
-    if (slideFiveStart1>0) {
-    var pptxFour1 = pptx.addNewSlide({ bkgd: '000000' });
-    pptxFour1.addText(slideFour1, {x: 1.25, y: '3%', font_size: 30, font_face: 'Helvetica', color: 'ffffff', align: 'center', valign: 'top'});
-    }
-  //Slide Five
-    if (slideSixStart1>0) {
-    var pptxFive1 = pptx.addNewSlide({ bkgd: '000000' });
-    pptxFive1.addText(slideFive1, {x: 1.25, y: '3%', font_size: 30, font_face: 'Helvetica', color: 'ffffff', align: 'center', valign: 'top'});
-    }
-  //Slide Six
-    if (slideSevenStart1>0) {
-    var pptxSix1 = pptx.addNewSlide({ bkgd: '000000' });
-    pptxSix1.addText(slideSix1, {x: 1.25, y: '3%', font_size: 30, font_face: 'Helvetica', color: 'ffffff', align: 'center', valign: 'top'});
-    }
-  //Slide Seven
-    if (slideEightStart1>0) {
-    var pptxSeven1 = pptx.addNewSlide({ bkgd: '000000' });
-    pptxSeven1.addText(slideSeven1, {x: 1.25, y: '3%', font_size: 30, font_face: 'Helvetica', color: 'ffffff', align: 'center', valign: 'top'});
-    }
-  //Slide Eight
-    if (slideNineStart1>0) {
-    var pptxEight1 = pptx.addNewSlide({ bkgd: '000000' });
-    pptxEight1.addText(slideEight1, {x: 1.25, y: '3%', font_size: 30, font_face: 'Helvetica', color: 'ffffff', align: 'center', valign: 'top'});
-    }
-  //Slide Nine
-    if (slideTenStart1>0) {
-    var pptxNine1 = pptx.addNewSlide({ bkgd: '000000' });
-    pptxNine1.addText(slideNine1, {x: 1.25, y: '3%', font_size: 30, font_face: 'Helvetica', color: 'ffffff', align: 'center', valign: 'top'});
-    }
-  //Slide Ten
-    if (slideElevenStart1>0) {
-    var pptxTen1 = pptx.addNewSlide({ bkgd: '000000' });
-    pptxTen1.addText(slideTen1, {x: 1.25, y: '3%', font_size: 30, font_face: 'Helvetica', color: 'ffffff', align: 'center', valign: 'top'});
-    }
-  //Slide Eleven
-    if (slideTwelveStart1>0) {
-    var pptxEleven1 = pptx.addNewSlide({ bkgd: '000000' });
-    pptxEleven1.addText(slideEleven1, {x: 1.25, y: '3%', font_size: 30, font_face: 'Helvetica', color: 'ffffff', align: 'center', valign: 'top'});
-    }
-  //Slide Twelve
-    if (slideThirteenStart1>0) {
-    var pptxTwelve1 = pptx.addNewSlide({ bkgd: '000000' });
-    pptxTwelve1.addText(slideTwelve1, {x: 1.25, y: '3%', font_size: 30, font_face: 'Helvetica', color: 'ffffff', align: 'center', valign: 'top'});
-  }};
-      // pptx.save('Lyrics Slideshow');
-  };
+        // loop to distribute slideArr to each slide in pptx
+        for (let i = 0; i < numberOfSlides; i++){
+          var pptxLyricSlides = pptx.addNewSlide({ bkgd: '000000' });
+          pptxLyricSlides.addText(slideArr[i+1], {x: 1.25, y: '3%', font_size: 30, font_face: 'Helvetica', color: 'ffffff', align: 'center', valign: 'top'});
+        };
+      };
+  // ===== end of reformatSlides function =====
+};
 window.slides = function () {
-  document.getElementById("slidesProgress").innerHTML = "Creating File..."
-  // inputs from html side
-    // song 1
-      var title1Raw = document.getElementById("title1").value;
-      var title1 = toTitleCase(title1Raw);
-      var artist1Raw = document.getElementById("artist1").value;
-      var artist1 = toTitleCase(artist1Raw);
-      var lyrics1 = document.getElementById("lyrics1").value;
-    // song 2
-      var title2Raw = document.getElementById("title2").value;
-      var title2 = toTitleCase(title2Raw);
-      var artist2Raw = document.getElementById("artist2").value;
-      var artist2 = toTitleCase(artist2Raw);
-      var lyrics2 = document.getElementById("lyrics2").value;
-    // song 3
-      var title3Raw = document.getElementById("title3").value;
-      var title3 = toTitleCase(title3Raw);
-      var artist3Raw = document.getElementById("artist3").value;
-      var artist3 = toTitleCase(artist3Raw);
-      var lyrics3 = document.getElementById("lyrics3").value;
-    // song 4
-      var title4Raw = document.getElementById("title4").value;
-      var title4 = toTitleCase(title4Raw);
-      var artist4Raw = document.getElementById("artist4").value;
-      var artist4 = toTitleCase(artist4Raw);
-      var lyrics4 = document.getElementById("lyrics4").value;
-  // create PPT variable
+    // update button to give user feedback
+    document.getElementById("slidesProgress").innerHTML = "Creating File..."
+    // set up input arrays from HTML side
+    var numberOfSongs = 4;
+    var titleArr = [];
+    var artistArr = [];
+    var lyricsArr = [];
+    // read in all title, artist, and lyric inputs from HTML side & make title case
+    for (let i = 1; i < numberOfSongs+1; i++){
+      titleArr[i-1] = toTitleCase(document.getElementById("title"+i).value);
+      artistArr[i-1] = toTitleCase(document.getElementById("artist"+i).value);
+      lyricsArr[i-1] = document.getElementById("lyrics"+i).value;
+    };
+
+    // create PPT variable
     var pptx = new PptxGenJS();
-    // now you get call your api for each title/artist and get the chords
-  	// but getSong returns a promise, which means it's ASYNCHRONOUS. You'll
-  	// want to get ALL of your chords before making the slideshow. You can send
-  	// all of your requests in parallel by calling all three and putting the promise
-  	// returned from each call into an array, like so:
-    const chordsPromises = [
-      lyrics1,
-  		lyrics2,
-  		lyrics3,
-      lyrics4
-  	];
+    // reformat each input using reformatSlides function
+    for (let i = 0; i < numberOfSongs; i++){
+      reformatSlides(pptx, titleArr[i], artistArr[i], lyricsArr[i]);
+    };
 
-    // USED TO BE:
-    // const chordsPromises = [
-    //   getSong(title1, artist1),
-    //   getSong(title2, artist2),
-    //   getSong(title3, artist3),
-    //   getSong(title4, artist4)
-    // ];
-
-  	// then, you pass them to the Promise.all function
-  	return Promise.all(chordsPromises).then(function(chords) {
-  		chords.forEach(function(lyricsIn, index) {
-        if(index == 0){
-          var titleIn = title1;
-          var artistIn = artist1;
-        } else if (index == 1){
-          var titleIn = title2;
-          var artistIn = artist2;
-        } else if (index == 2){
-          var titleIn = title3;
-          var artistIn = artist3;
-        } else {
-          var titleIn = title4;
-          var artistIn = artist4;
-        }
-  			reformatSlides(pptx, titleIn, artistIn, lyricsIn);
-  		});
-  	}).then(function() {
-  		pptx.save('Lyrics Slideshow');
-      document.getElementById("slidesProgress").innerHTML = "Lyric Slideshow"
-  	}).catch(function(e) {
-  		console.error('Something terrible has happened!', e);
-  	});
-
+    // save & download pptx
+    pptx.save('Lyrics Slideshow');
+    // change user feedback button back to normal
+    document.getElementById("slidesProgress").innerHTML = "Lyric Slideshow"
   };
+
+// =================================================================================================
+// ===================================== MUSICIAN CHORDS (PDF) =====================================
+// =================================================================================================
+function reformatChords(doc, songName, songArtist, songLyrics){
+  // Reformat input with REGEX
+  // var songLyrics ="Cornerstone by Hillsong\n\n[Intro]\n\n[ch]C[\/ch]   [ch]Am[\/ch]   [ch]F[\/ch]  [ch]G[\/ch]\n\n\n[Verse 1]\n\n[ch]C[\/ch]\nMy hope is built on nothing less\n[ch]F[\/ch]                     [ch]G[\/ch]\nThan Jesus\' blood and righteousness\n[ch]Am[\/ch]"
+  // remove song intro text
+  // var songLyrics2 = songLyrics.replace(/".+[\s\S].+.[\s\S].+.[\s\S].+.[\s\S]/gm, "");
+  // remove Ð
+  // var songLyrics3 = songLyrics2.replace(/\n\n\n/gm, "\n");
+  // var songLyrics6 = songLyrics3.replace(/\n\n/gm, "\n");
+  // remove [ch] & [/ch]
+  var songLyrics_v1 = songLyrics.replace(/\[ch\]/gm, "");
+  var songLyrics_v2 = songLyrics_v1.replace(/\[\/ch\]/gm, "");
+  //remove Ð
+  var songLyrics_v3 = songLyrics_v2.replace(/\r\n/gm, "\n");
+  // remove end of song " mark
+  // var songLyrics7 = songLyrics6.replace(/"/gm, "");
+  // remove riff tabs (if present)
+  // var songLyrics9 = songLyrics7.replace(/.\|-.*/gm, "");
+  // remove extra spaces & blank lines
+  // var songLyrics9 = songLyrics8.replace(/\r?\n\s*\n/gm, "\r\n");
+
+  // Create pages
+  doc.addPage({
+    layout: 'landscape',
+    margin: 25,
+  });
+    doc.font('Courier-Bold');
+    doc.fontSize(13);
+    doc.text(songName + " - " + songArtist, {
+      columns: 2,
+    });
+      doc.moveDown();
+        doc.font('Courier');
+        doc.fontSize(12);
+        doc.text(songLyrics_v3, {
+          columns: 2,
+        });
+  // ===== end of reformatChords function =====
+};
+window.chords = function () {
+  // update button to give user feedback
+  document.getElementById("chordsProgress").innerHTML = "Creating File..."
+  // set up input arrays from HTML side
+  var numberOfSongs = 4;
+  var titleArr = [];
+  var artistArr = [];
+  var lyricsArr = [];
+  // read in all title, artist, and lyric inputs from HTML side & make title case
+  for (let i = 1; i < numberOfSongs+1; i++){
+    titleArr[i-1] = toTitleCase(document.getElementById("title"+i).value);
+    artistArr[i-1] = toTitleCase(document.getElementById("artist"+i).value);
+    lyricsArr[i-1] = document.getElementById("lyrics"+i).value;
+  };
+
+  // create blank PDF document
+  var doc = new PDFDocument({
+      autoFirstPage: false,
+      // layout: 'landscape',
+      margin: 25,
+    });
+  // change blank PDF document to a blob stream
+  window.stream = doc.pipe(blobStream());
+
+  // reformat each input using reformatChords
+  for (let i = 0; i < numberOfSongs; i++){
+      reformatChords(doc, titleArr[i], artistArr[i], lyricsArr[i]);
+  };
+  // save document
+  doc.end();
+
+  // downloader
+  var filename = 'Musician Chords';
+  stream.on('finish', function () {
+    var pom = document.createElement('a');
+    pom.setAttribute('href', stream.toBlobURL('application/pdf'));
+    pom.setAttribute('download', filename);
+    if (document.createEvent) {
+      var event = document.createEvent('MouseEvents');
+      event.initEvent('click', true, true);
+      pom.dispatchEvent(event);
+    }
+    else {
+        pom.click();
+    }
+  })
+  // change user feedback button back to normal
+  document.getElementById("chordsProgress").innerHTML = "Musician Chords"
+};
 
 // =================================================================================================
 // ===================================== LYRIC HANDOUT (PDF) =======================================
 // =================================================================================================
-function reformatHandout(doc, songName, songArtist, input){
+function reformatHandout(doc, songName, songArtist, songLyrics){
   //remove chords
-    var input2 = input.replace(/(\[ch\].*\[*c*h*\])/gm, "");
+    var songLyrics_v1 = songLyrics.replace(/(\[ch\].*\[*c*h*\])/gm, "");
   //remove song intro text
-    var input3 = input2.replace(/".+[\s\S].+.[\s\S].+.[\s\S].+.[\s\S]/gm, "");
+    var songLyrics_v2 = songLyrics_v1.replace(/".+[\s\S].+.[\s\S].+.[\s\S].+.[\s\S]/gm, "");
   //remove end of song " mark
-    var input4 = input3.replace(/"/gm, "");
+    var songLyrics_v3 = songLyrics_v2.replace(/"/gm, "");
   //remove riff tabs (if present)
-    var input5 = input4.replace(/.\|-.*/gm, "");
+    var songLyrics_v4 = songLyrics_v3.replace(/.\|-.*/gm, "");
   //remove [solo] & [instrumental]
-    var input6 = input5.replace(/\[Solo\]|\[solo\]|\[Instrumental\]|\[instrumental\]/gm, "");
+    var songLyrics_v5 = songLyrics_v4.replace(/\[Solo\]|\[solo\]|\[Instrumental\]|\[instrumental\]/gm, "");
   //remove Ð
-    var input8 = input6.replace(/\r\n/gm, "\n");
+    var songLyrics_v6 = songLyrics_v5.replace(/\r\n/gm, "\n");
   //remove Ð attempt
     // var input7 = input6.replace(/\n\n\n/gm, "\n");
-    // var input8 = input7.replace(/\n\n/gm, "\n");
-
+    // var songLyrics_v6 = input7.replace(/\n\n/gm, "\n");
 
   // Page Creation
     // doc.addPage({
@@ -573,88 +349,62 @@ function reformatHandout(doc, songName, songArtist, input){
       doc.moveDown();
         doc.font('Courier');
         doc.fontSize(12);
-        doc.text(input8, {
+        doc.text(songLyrics_v6, {
           columns: 1,
         });
         doc.moveDown();
+        // ===== end of reformatHandout function =====
     };
 window.handout = function () {
-  // give user feedback
+  // update button to give user feedback
   document.getElementById("handoutProgress").innerHTML = "Creating File..."
-  // inputs
-  var title1Raw = document.getElementById("title1").value;
-    var title1 = toTitleCase(title1Raw);
-    var artist1Raw = document.getElementById("artist1").value;
-    var artist1 = toTitleCase(artist1Raw);
-  var title2Raw = document.getElementById("title2").value;
-    var title2 = toTitleCase(title2Raw);
-    var artist2Raw = document.getElementById("artist2").value;
-    var artist2 = toTitleCase(artist2Raw);
-  var title3Raw = document.getElementById("title3").value;
-    var title3 = toTitleCase(title3Raw);
-    var artist3Raw = document.getElementById("artist3").value;
-    var artist3 = toTitleCase(artist3Raw);
-  var title4Raw = document.getElementById("title4").value;
-    var title4 = toTitleCase(title4Raw);
-    var artist4Raw = document.getElementById("artist4").value;
-    var artist4 = toTitleCase(artist4Raw);
-  // create PDF variable
-    var doc = new PDFDocument(
-      {
-        // autoFirstPage: false,
-        // layout: 'landscape',
-        margin: 25,
-      }
-    );
-    window.stream = doc.pipe(blobStream());
-
-    const chordsPromises = [
-      getSong(title1, artist1),
-      getSong(title2, artist2),
-      getSong(title3, artist3),
-      getSong(title4, artist4)
-    ];
-
-    return Promise.all(chordsPromises).then(function(chords) {
-      chords.forEach(function(chordsInput, index) {
-        if(index == 0){
-          var titleIn = title1;
-          var artistIn = artist1;
-        } else if (index == 1){
-          var titleIn = title2;
-          var artistIn = artist2;
-        } else if (index == 2){
-          var titleIn = title3;
-          var artistIn = artist3;
-        } else {
-          var titleIn = title4;
-          var artistIn = artist4;
-        }
-        reformatHandout(doc, titleIn, artistIn, chordsInput);
-      });
-    }).then(function() {
-        doc.end();
-        var filename = 'Lyric Handout';
-        // <!---downloader-->
-        stream.on('finish', function () {
-          var pom = document.createElement('a');
-          pom.setAttribute('href', stream.toBlobURL('application/pdf'));
-          pom.setAttribute('download', filename);
-          if (document.createEvent) {
-              var event = document.createEvent('MouseEvents');
-              event.initEvent('click', true, true);
-              pom.dispatchEvent(event);
-            }
-            else {
-                pom.click();
-            }
-        })
-        // return user feedback button change to normal
-        document.getElementById("handoutProgress").innerHTML = "Lyric Handout"
-      }).catch(function(e) {
-      console.error('Something terrible has happened!', e);
-    });
+  // set up input arrays from HTML side
+  var numberOfSongs = 4;
+  var titleArr = [];
+  var artistArr = [];
+  var lyricsArr = [];
+  // read in all title, artist, and lyric inputs from HTML side & make title case
+  for (let i = 1; i < numberOfSongs+1; i++){
+    titleArr[i-1] = toTitleCase(document.getElementById("title"+i).value);
+    artistArr[i-1] = toTitleCase(document.getElementById("artist"+i).value);
+    lyricsArr[i-1] = document.getElementById("lyrics"+i).value;
   };
+
+  // create blank PDF document
+  var doc = new PDFDocument({
+    // autoFirstPage: false,
+    // layout: 'landscape',
+    margin: 25,
+  });
+  // change blank PDF document to a blob stream
+  window.stream = doc.pipe(blobStream());
+
+  // reformat each input using reformatHandout
+  for (let i = 0; i < numberOfSongs; i++){
+      reformatHandout(doc, titleArr[i], artistArr[i], lyricsArr[i]);
+  };
+  // save document
+  doc.end();
+
+  // downloader
+  var filename = 'Lyric Handout';
+  stream.on('finish', function () {
+    var pom = document.createElement('a');
+    pom.setAttribute('href', stream.toBlobURL('application/pdf'));
+    pom.setAttribute('download', filename);
+    if (document.createEvent) {
+      var event = document.createEvent('MouseEvents');
+      event.initEvent('click', true, true);
+      pom.dispatchEvent(event);
+    }
+    else {
+        pom.click();
+    }
+  })
+    // change user feedback button back to normal
+    document.getElementById("handoutProgress").innerHTML = "Lyric Handout"
+};
+
 
 // =================================================================================================
 // ===================================== LYRICS ON PAPER (DOC) TEST???? ============================
@@ -1077,6 +827,50 @@ window.test = function () {
 
 
 
+        //
+        //   Example ARRAY by Tylor
+        //
+        //   var pptx = new PptxGenJS();
+        //   // now you get call your api for each title/artist and get the chords
+        //   // but getSong returns a promise, which means it's ASYNCHRONOUS. You'll
+        //   // want to get ALL of your chords before making the slideshow. You can send
+        //   // all of your requests in parallel by calling all three and putting the promise
+        //   // returned from each call into an array, like so:
+        //   const chordsPromises = [
+        //     getSong(title1, artist1),
+        //     getSong(title2, artist2),
+        //     getSong(title3, artist3),
+        //     getSong(title4, artist4)
+        //   ];
+        //
+        //   // then, you pass them to the Promise.all function
+        //   return Promise.all(chordsPromises).then(function(chords) {
+        //     chords.forEach(function(chordsInput, index) {
+        //       if(index == 0){
+        //         var titleIn = title1;
+        //         var artistIn = artist1;
+        //       } else if (index == 1){
+        //         var titleIn = title2;
+        //         var artistIn = artist2;
+        //       } else if (index == 2){
+        //         var titleIn = title3;
+        //         var artistIn = artist3;
+        //       } else {
+        //         var titleIn = title4;
+        //         var artistIn = artist4;
+        //       }
+        //       reformatSlides(pptx, titleIn, artistIn, chordsInput);
+        //     });
+        //   }).then(function() {
+        //     pptx.save('Lyrics Slideshow');
+        //     document.getElementById("slidesProgress").innerHTML = "Lyric Slideshow"
+        //   }).catch(function(e) {
+        //     console.error('Something terrible has happened!', e);
+        //   });
+        //
+        // };
+
+
 
 
 
@@ -1144,478 +938,3 @@ window.test = function () {
       //   var exporter = new docx.LocalPacker(doc);
       //   exporter.pack('My First Document');
       };
-
-
-
-
-
-
-
-
-
-
-
-// ===================================== CODE VAULT =====================================
-  // How it used to be done
-  //     //SONG ONE!!!!!!!!!!!!
-  //       //remove chords
-  //         var chordsInput1_v2 = chordsInput1.replace(/\b([CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m)*[\d\/]*(?:[CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m)*[\d\/]*)*)(?=\s|$)(?!\w)/gm, "");
-  //       //remove blank lines where chords used to be
-  //         var chordsInput1_v3 = chordsInput1_v2.replace(/^\s*[\r\n]*/gm, "");
-  //
-  //     //SONG TWO!!!!!!!!!!!
-  //       //remove chords
-  //         var chordsInput2_v2 = chordsInput2.replace(/\b([CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m)*[\d\/]*(?:[CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m)*[\d\/]*)*)(?=\s|$)(?!\w)/gm, "");
-  //       //remove blank lines where chords used to be
-  //         var chordsInput2_v3 = chordsInput2_v2.replace(/^\s*[\r\n]*/gm, "");
-  //
-  //     //SONG THREE!!!!!!!!!!!
-  //       //remove chords
-  //         var chordsInput3_v2 = chordsInput3.replace(/\b([CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m)*[\d\/]*(?:[CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m)*[\d\/]*)*)(?=\s|$)(?!\w)/gm, "");
-  //       //remove blank lines where chords used to be
-  //         var chordsInput3_v3 = chordsInput3_v2.replace(/^\s*[\r\n]*/gm, "");
-  //
-  //       //Combine
-  //         var song = title1 + "\n" + chordsInput1_v3 + "\n\n" + title2 + "\n" + chordsInput2_v3 + "\n\n" +
-  //           title3 + "\n" + chordsInput3_v3;
-
-  //     // <!---PDF Generator-->
-
-  //     // INSERT PAGE
-  //     var doc = new PDFDocument({
-  //       margin: 25,
-  //     });
-  //     window.stream = doc.pipe(blobStream());
-  //     doc.font('Times-Roman');
-  //
-  //     doc.fontSize (11);
-  //     doc.text(song, {
-  //       align: 'left',
-  //       columns: 2,
-  //     });
-  //
-  //
-  //
-  //     doc.end();
-  //     stream.on('finish', function () {
-  //     // <!---downloader-->
-  //     var pom = document.createElement('a');
-  //     pom.setAttribute('href', stream.toBlobURL('application/pdf'));
-  //     pom.setAttribute('download', filename);
-  //     if (document.createEvent) {
-  //         var event = document.createEvent('MouseEvents');
-  //         event.initEvent('click', true, true);
-  //         pom.dispatchEvent(event);
-  //     }
-  //     else {
-  //         pom.click();
-  //     }
-  //   })
-  // };
-
-  // LYRICS ON SLIDES (PDF) - RETIRED
-  // window.slides = function () {
-  //     var filename = 'Slides';
-  //     // inputs
-  //     var title1 = document.getElementById("title1").value;
-  //     var chordsInput1 = document.getElementById("chords1").value;
-  //
-  //     var title2 = document.getElementById("title2").value;
-  //     var chordsInput2 = document.getElementById("chords2").value;
-  //
-  //     var title3 = document.getElementById("title3").value;
-  //     var chordsInput3 = document.getElementById("chords3").value;
-  //
-  //     //reformat!!!!!!!!!!!!!!
-  //
-  //     //SONG ONE!!!!!!!!!!!!
-  //     //remove chords
-  //     var one1 = chordsInput1.replace(/Am\s|A\s|A#\s|A\/G|Bm\s|C\s|Dsus|G\s|E\s|Em\s|Em7\s|D\s|Dm\s|F\s|Cadd2|Cadd9|G\/D|D\/F#|G\/B|Dsus4|Am7|-|Am\/G|C\/E/g,"");
-  //     var two1 = one1.replace(/^\s*[\r\n]*/gm,"");
-  //     //var two = three.replace(/\[Intro]\n\s/,"");
-  //     //find where to split slides
-  //     var slideOneStart1 = two1.indexOf("[");
-  //     var slideTwoStart1 = two1.indexOf("[",slideOneStart1+1);
-  //     var slideThreeStart1 = two1.indexOf("[",slideTwoStart1+1);
-  //     var slideFourStart1 = two1.indexOf("[",slideThreeStart1+1);
-  //     var slideFiveStart1 = two1.indexOf("[",slideFourStart1+1);
-  //     var slideSixStart1 = two1.indexOf("[",slideFiveStart1+1);
-  //     var slideSevenStart1 = two1.indexOf("[",slideSixStart1+1);
-  //     var slideEightStart1 = two1.indexOf("[",slideSevenStart1+1);
-  //     var slideNineStart1 = two1.indexOf("[",slideEightStart1+1);
-  //     //split slides
-  //     var slideOnePre1 = two1.slice(slideOneStart1,slideTwoStart1);
-  //     var slideTwoPre1 = two1.slice(slideTwoStart1,slideThreeStart1);
-  //     var slideThreePre1 = two1.slice(slideThreeStart1,slideFourStart1);
-  //     var slideFourPre1 = two1.slice(slideFourStart1,slideFiveStart1);
-  //     var slideFivePre1 = two1.slice(slideFiveStart1,slideSixStart1);
-  //     var slideSixPre1 = two1.slice(slideSixStart1,slideSevenStart1);
-  //     var slideSevenPre1 = two1.slice(slideSevenStart1,slideEightStart1);
-  //     var slideEightPre1 = two1.slice(slideEightStart1,slideNineStart1);
-  //     //remove verse & chorus headers
-  //     var slideOne1 = slideOnePre1.replace(/\[.*\]/g,"");
-  //     var slideTwo1 = slideTwoPre1.replace(/\[.*\]/g,"");
-  //     var slideThree1 = slideThreePre1.replace(/\[.*\]/g,"");
-  //     var slideFour1 = slideFourPre1.replace(/\[.*\]/g,"");
-  //     var slideFive1 = slideFivePre1.replace(/\[.*\]/g,"");
-  //     var slideSix1 = slideSixPre1.replace(/\[.*\]/g,"");
-  //     var slideSeven1 = slideSevenPre1.replace(/\[.*\]/g,"");
-  //     var slideEight1 = slideEightPre1.replace(/\[.*\]/g,"");
-  //
-  //
-  //     //SONG TWO!!!!!!!!!!!
-  //
-  //     //remove chords
-  //     var one2 = chordsInput2.replace(/Am\s|A\s|A#\s|Bm\s|C\s|Dsus|G\s|E\s|Em\s|Em7\s|D\s|Dm\s|F\s|Cadd2|Cadd9|G\/D|D\/F#|G\/B|Dsus4|Am7|-|Am\/G|C\/E/g,"");
-  //     var two2 = one2.replace(/^\s*[\r\n]*/gm,"");
-  //     //var two = three.replace(/\[Intro]\n\s/,"");
-  //     //find where to split slides
-  //     var slideOneStart2 = two2.indexOf("[");
-  //     var slideTwoStart2 = two2.indexOf("[",slideOneStart2+1);
-  //     var slideThreeStart2 = two2.indexOf("[",slideTwoStart2+1);
-  //     var slideFourStart2 = two2.indexOf("[",slideThreeStart2+1);
-  //     var slideFiveStart2 = two2.indexOf("[",slideFourStart2+1);
-  //     var slideSixStart2 = two2.indexOf("[",slideFiveStart2+1);
-  //     var slideSevenStart2 = two2.indexOf("[",slideSixStart2+1);
-  //     var slideEightStart2 = two2.indexOf("[",slideSevenStart2+1);
-  //     var slideNineStart2 = two2.indexOf("[",slideEightStart2+1);
-  //     //split slides
-  //     var slideOnePre2 = two2.slice(slideOneStart2,slideTwoStart2);
-  //     var slideTwoPre2 = two2.slice(slideTwoStart2,slideThreeStart2);
-  //     var slideThreePre2 = two2.slice(slideThreeStart2,slideFourStart2);
-  //     var slideFourPre2 = two2.slice(slideFourStart2,slideFiveStart2);
-  //     var slideFivePre2 = two2.slice(slideFiveStart2,slideSixStart2);
-  //     var slideSixPre2 = two2.slice(slideSixStart2,slideSevenStart2);
-  //     var slideSevenPre2 = two2.slice(slideSevenStart2,slideEightStart2);
-  //     var slideEightPre2 = two2.slice(slideEightStart2,slideNineStart2);
-  //     //remove verse & chorus headers
-  //     var slideOne2 = slideOnePre2.replace(/\[.*\]/g,"");
-  //     var slideTwo2 = slideTwoPre2.replace(/\[.*\]/g,"");
-  //     var slideThree2 = slideThreePre2.replace(/\[.*\]/g,"");
-  //     var slideFour2 = slideFourPre2.replace(/\[.*\]/g,"");
-  //     var slideFive2 = slideFivePre2.replace(/\[.*\]/g,"");
-  //     var slideSix2 = slideSixPre2.replace(/\[.*\]/g,"");
-  //     var slideSeven2 = slideSevenPre2.replace(/\[.*\]/g,"");
-  //     var slideEight2 = slideEightPre2.replace(/\[.*\]/g,"");
-  //
-  //
-  //
-  //     //SONG THREE!!!!!!!!!!!
-  //
-  //     //remove chords
-  //     var one3 = chordsInput3.replace(/Am\s|A\s|A#\s|Bm\s|C\s|Dsus|G\s|E\s|Em\s|Em7\s|D\s|Dm\s|F\s|Cadd2|Cadd9|G\/D|D\/F#|G\/B|Dsus4|Am7|-|Am\/G|C\/E/g,"");
-  //     var two3 = one3.replace(/^\s*[\r\n]*/gm,"");
-  //     //var two = three.replace(/\[Intro]\n\s/,"");
-  //     //find where to split slides
-  //     var slideOneStart3 = two3.indexOf("[");
-  //     var slideTwoStart3 = two3.indexOf("[",slideOneStart3+1);
-  //     var slideThreeStart3 = two3.indexOf("[",slideTwoStart3+1);
-  //     var slideFourStart3 = two3.indexOf("[",slideThreeStart3+1);
-  //     var slideFiveStart3 = two3.indexOf("[",slideFourStart3+1);
-  //     var slideSixStart3 = two3.indexOf("[",slideFiveStart3+1);
-  //     var slideSevenStart3 = two3.indexOf("[",slideSixStart3+1);
-  //     var slideEightStart3 = two3.indexOf("[",slideSevenStart3+1);
-  //     var slideNineStart3 = two3.indexOf("[",slideEightStart3+1);
-  //     //split slides
-  //     var slideOnePre3 = two3.slice(slideOneStart3,slideTwoStart3);
-  //     var slideTwoPre3 = two3.slice(slideTwoStart3,slideThreeStart3);
-  //     var slideThreePre3 = two3.slice(slideThreeStart3,slideFourStart3);
-  //     var slideFourPre3 = two3.slice(slideFourStart3,slideFiveStart3);
-  //     var slideFivePre3 = two3.slice(slideFiveStart3,slideSixStart3);
-  //     var slideSixPre3 = two3.slice(slideSixStart3,slideSevenStart3);
-  //     var slideSevenPre3 = two3.slice(slideSevenStart3,slideEightStart3);
-  //     var slideEightPre3 = two3.slice(slideEightStart3,slideNineStart3);
-  //     //remove verse & chorus headers
-  //     var slideOne3 = slideOnePre3.replace(/\[.*\]/g,"");
-  //     var slideTwo3 = slideTwoPre3.replace(/\[.*\]/g,"");
-  //     var slideThree3 = slideThreePre3.replace(/\[.*\]/g,"");
-  //     var slideFour3 = slideFourPre3.replace(/\[.*\]/g,"");
-  //     var slideFive3 = slideFivePre3.replace(/\[.*\]/g,"");
-  //     var slideSix3 = slideSixPre3.replace(/\[.*\]/g,"");
-  //     var slideSeven3 = slideSevenPre3.replace(/\[.*\]/g,"");
-  //     var slideEight3 = slideEightPre3.replace(/\[.*\]/g,"");
-  //
-  //
-  //
-  //     // page one
-  //     var doc = new PDFDocument(
-  //       {
-  //         layout: 'landscape'
-  //       }
-  //     );
-  //     window.stream = doc.pipe(blobStream());
-  //     doc.font('Helvetica');
-  //     doc.rect(0,0,800,800);
-  //     doc.fillAndStroke("black","#100");
-  //
-  //     //title slide
-  //     doc.fontSize(40).fillColor('white');
-  //     doc.moveDown(4);
-  //     doc.text(title1, {
-  //       align: 'center',
-  //     });
-  //
-  //
-  //     //song one, slide one
-  //     doc.addPage();
-  //     doc.rect(0,0,800,800);
-  //     doc.fillAndStroke("black","#100");
-  //     doc.fontSize(30).fillColor('white');
-  //     doc.text(slideOne1, {
-  //       align: 'center',
-  //     });
-  //
-  //     //song one, slide two
-  //     doc.addPage();
-  //     doc.rect(0,0,800,800);
-  //     doc.fillAndStroke("black","#100");
-  //     doc.fontSize(30).fillColor('white');
-  //     doc.text(slideTwo1, {
-  //       align: 'center',
-  //     });
-  //
-  //     //song one, slide three
-  //     doc.addPage();
-  //     doc.rect(0,0,800,800);
-  //     doc.fillAndStroke("black","#100");
-  //     doc.fontSize(30).fillColor('white');
-  //     doc.text(slideThree1, {
-  //       align: 'center',
-  //     });
-  //
-  //     //song one, slide four
-  //     doc.addPage();
-  //     doc.rect(0,0,800,800);
-  //     doc.fillAndStroke("black","#100");
-  //     doc.fontSize(30).fillColor('white');
-  //     doc.text(slideFour1, {
-  //       align: 'center',
-  //     });
-  //
-  //     //song one, slide five
-  //     doc.addPage();
-  //     doc.rect(0,0,800,800);
-  //     doc.fillAndStroke("black","#100");
-  //     doc.fontSize(30).fillColor('white');
-  //     doc.text(slideFive1, {
-  //       align: 'center',
-  //     });
-  //
-  //     //song one, slide six
-  //     doc.addPage();
-  //     doc.rect(0,0,800,800);
-  //     doc.fillAndStroke("black","#100");
-  //     doc.fontSize(30).fillColor('white');
-  //     doc.text(slideSix1, {
-  //       align: 'center',
-  //     });
-  //
-  //     //song one, slide seven
-  //     doc.addPage();
-  //     doc.rect(0,0,800,800);
-  //     doc.fillAndStroke("black","#100");
-  //     doc.fontSize(30).fillColor('white');
-  //     doc.text(slideSeven1, {
-  //       align: 'center',
-  //     });
-  //
-  //     //song one, slide eight
-  //     doc.addPage();
-  //     doc.rect(0,0,800,800);
-  //     doc.fillAndStroke("black","#100");
-  //     doc.fontSize(30).fillColor('white');
-  //     doc.text(slideEight1, {
-  //       align: 'center',
-  //     });
-  //
-  //     //SONG TWO!!!!!!!!
-  //
-  //     //song two title
-  //     doc.addPage();
-  //     doc.rect(0,0,800,800);
-  //     doc.fillAndStroke("black","#100");
-  //     doc.fontSize(40).fillColor('white');
-  //     doc.moveDown(4)
-  //     doc.text(title2, {
-  //       align: 'center',
-  //     });
-  //
-  //     //song one, slide one
-  //     doc.addPage();
-  //     doc.rect(0,0,800,800);
-  //     doc.fillAndStroke("black","#100");
-  //     doc.fontSize(30).fillColor('white');
-  //     doc.text(slideOne2, {
-  //       align: 'center',
-  //     });
-  //
-  //     //song one, slide two
-  //     doc.addPage();
-  //     doc.rect(0,0,800,800);
-  //     doc.fillAndStroke("black","#100");
-  //     doc.fontSize(30).fillColor('white');
-  //     doc.text(slideTwo2, {
-  //       align: 'center',
-  //     });
-  //
-  //     //song one, slide three
-  //     doc.addPage();
-  //     doc.rect(0,0,800,800);
-  //     doc.fillAndStroke("black","#100");
-  //     doc.fontSize(30).fillColor('white');
-  //     doc.text(slideThree2, {
-  //       align: 'center',
-  //     });
-  //
-  //     //song one, slide four
-  //     doc.addPage();
-  //     doc.rect(0,0,800,800);
-  //     doc.fillAndStroke("black","#100");
-  //     doc.fontSize(30).fillColor('white');
-  //     doc.text(slideFour2, {
-  //       align: 'center',
-  //     });
-  //
-  //     //song one, slide five
-  //     doc.addPage();
-  //     doc.rect(0,0,800,800);
-  //     doc.fillAndStroke("black","#100");
-  //     doc.fontSize(30).fillColor('white');
-  //     doc.text(slideFive2, {
-  //       align: 'center',
-  //     });
-  //
-  //     //song one, slide six
-  //     doc.addPage();
-  //     doc.rect(0,0,800,800);
-  //     doc.fillAndStroke("black","#100");
-  //     doc.fontSize(30).fillColor('white');
-  //     doc.text(slideSix2, {
-  //       align: 'center',
-  //     });
-  //
-  //     //song one, slide seven
-  //     doc.addPage();
-  //     doc.rect(0,0,800,800);
-  //     doc.fillAndStroke("black","#100");
-  //     doc.fontSize(30).fillColor('white');
-  //     doc.text(slideSeven2, {
-  //       align: 'center',
-  //     });
-  //
-  //     //song one, slide eight
-  //     doc.addPage();
-  //     doc.rect(0,0,800,800);
-  //     doc.fillAndStroke("black","#100");
-  //     doc.fontSize(30).fillColor('white');
-  //     doc.text(slideEight2, {
-  //       align: 'center',
-  //     });
-  //
-  //
-  //
-  //     //SONG THREE!!!!!!!!
-  //
-  //     //song two title
-  //     doc.addPage();
-  //     doc.rect(0,0,800,800);
-  //     doc.fillAndStroke("black","#100");
-  //     doc.fontSize(40).fillColor('white');
-  //     doc.moveDown(4)
-  //     doc.text(title3, {
-  //       align: 'center',
-  //     });
-  //
-  //     //song one, slide one
-  //     doc.addPage();
-  //     doc.rect(0,0,800,800);
-  //     doc.fillAndStroke("black","#100");
-  //     doc.fontSize(30).fillColor('white');
-  //     doc.text(slideOne3, {
-  //       align: 'center',
-  //     });
-  //
-  //     //song one, slide two
-  //     doc.addPage();
-  //     doc.rect(0,0,800,800);
-  //     doc.fillAndStroke("black","#100");
-  //     doc.fontSize(30).fillColor('white');
-  //     doc.text(slideTwo3, {
-  //       align: 'center',
-  //     });
-  //
-  //     //song one, slide three
-  //     doc.addPage();
-  //     doc.rect(0,0,800,800);
-  //     doc.fillAndStroke("black","#100");
-  //     doc.fontSize(30).fillColor('white');
-  //     doc.text(slideThree3, {
-  //       align: 'center',
-  //     });
-  //
-  //     //song one, slide four
-  //     doc.addPage();
-  //     doc.rect(0,0,800,800);
-  //     doc.fillAndStroke("black","#100");
-  //     doc.fontSize(30).fillColor('white');
-  //     doc.text(slideFour3, {
-  //       align: 'center',
-  //     });
-  //
-  //     //song one, slide five
-  //     doc.addPage();
-  //     doc.rect(0,0,800,800);
-  //     doc.fillAndStroke("black","#100");
-  //     doc.fontSize(30).fillColor('white');
-  //     doc.text(slideFive3, {
-  //       align: 'center',
-  //     });
-  //
-  //     //song one, slide six
-  //     doc.addPage();
-  //     doc.rect(0,0,800,800);
-  //     doc.fillAndStroke("black","#100");
-  //     doc.fontSize(30).fillColor('white');
-  //     doc.text(slideSix3, {
-  //       align: 'center',
-  //     });
-  //
-  //     //song one, slide seven
-  //     doc.addPage();
-  //     doc.rect(0,0,800,800);
-  //     doc.fillAndStroke("black","#100");
-  //     doc.fontSize(30).fillColor('white');
-  //     doc.text(slideSeven3, {
-  //       align: 'center',
-  //     });
-  //
-  //     //song one, slide eight
-  //     doc.addPage();
-  //     doc.rect(0,0,800,800);
-  //     doc.fillAndStroke("black","#100");
-  //     doc.fontSize(30).fillColor('white');
-  //     doc.text(slideEight3, {
-  //       align: 'center',
-  //     });
-  //
-  //
-  //
-  //
-  //
-  //
-  //     doc.end();
-  //     stream.on('finish', function () {
-  //     // <!---downloader-->
-  //     var pom = document.createElement('a');
-  //     pom.setAttribute('href', stream.toBlobURL('application/pdf'));
-  //     pom.setAttribute('download', filename);
-  //     if (document.createEvent) {
-  //         var event = document.createEvent('MouseEvents');
-  //         event.initEvent('click', true, true);
-  //         pom.dispatchEvent(event);
-  //     }
-  //     else {
-  //         pom.click();
-  //     }
-  //   })
-  // };
