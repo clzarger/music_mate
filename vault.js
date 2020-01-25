@@ -1,6 +1,92 @@
 
 
 
+
+// ===================================== GET INPUTS FUNCTION =====================================
+function getInputs(numberOfSongs, titleArr, artistArr, lyricsArr) {
+  // read in all title, artist, and lyric inputs from HTML side & make title case
+  for (let i = 1; i < numberOfSongs+1; i++){
+    titleArr[i-1] = toTitleCase(document.getElementById("title"+i).value);
+    artistArr[i-1] = toTitleCase(document.getElementById("artist"+i).value);
+    lyricsArr[i-1] = document.getElementById("lyrics"+i).value;
+  };
+  // if input lyrics for a song are blank, remove that element
+  for (let i = 0; i < numberOfSongs; i++){
+    if (lyricsArr[i] == "") {
+      titleArr.splice(i, 1);
+      artistArr.splice(i, 1);
+      lyricsArr.splice(i, 1);
+      numberOfSongs = numberOfSongs - 1;
+      i = i - 1;
+    };
+  };
+};
+
+
+// ===================================== TEST FUNCTION for array =====================================
+window.test = function () {
+    var songLyrics_v8 = 'HEY THIS [1] text for the first slide [2] second slide [3] third one [4] fourth one [5] fifth';
+
+  // find number of slides
+    var numberOfSlides = (songLyrics_v8.match(/\[/g) || []).length;
+
+  // create arrays & first index (javascript arrays use 0 for the first entry. I set it to -1 & skip it)
+    let slideStartIndicesArr = [-1];
+    let slideArr_w_whitespace_headers = [-1];
+    let slideArr_w_whitespace = [-1];
+    let slideArr = [-1];
+
+  // find slide start indices based on brackets (and store in array)
+    for (let i = 0; i < numberOfSlides; i++){
+      slideStartIndicesArr[i+1] = songLyrics_v8.indexOf("[", slideStartIndicesArr[i] + 1)
+    };  //i didn't put this loop in the next one because the isolate slides piece needs to have all indices ready
+
+  // sort input lyrics into slides & cleanup
+  for (let i = 0; i < numberOfSlides; i++){
+    // isolate slide lyrics (separate slides based on indices)
+    slideArr_w_whitespace_headers[i+1] = songLyrics_v8.slice(slideStartIndicesArr[i+1], slideStartIndicesArr[i+2])
+    // remove verse & chorus headers
+    slideArr_w_whitespace[i+1] = slideArr_w_whitespace_headers[i+1].replace(/\[.*\]/g, "");
+    // remove white space
+    slideArr[i+1] = slideArr_w_whitespace[i+1].trim();
+    };
+
+// DEBUG
+console.log(slideStartIndicesArr);
+console.log(slideArr_w_whitespace_headers);
+console.log(slideArr_w_whitespace);
+console.log(slideArr);
+
+//create pptx variable
+var pptx = new PptxGenJS();
+
+// create blank pptx file
+pptx.setLayout('LAYOUT_4x3');
+
+//fake inputs
+var songName = 'test';
+var songArtist = 'shoooot';
+
+if (isNaN('Title')) {
+    //Title Slide
+    var pptxTitleSlide = pptx.addNewSlide({ bkgd: '000000' });
+    pptxTitleSlide.addText(songName, {x: 1.25, y: 3.5, font_size: 40, font_face: 'Helvetica', color: 'ffffff', align: 'center', valign: 'middle'});
+    pptxTitleSlide.addText(songArtist, {x: 1.25, y: 4.5, font_size: 20, font_face: 'Helvetica', color: 'ffffff', align: 'center', valign: 'middle'});
+
+    // loop
+      for (let i = 0; i < numberOfSlides; i++){
+        var pptxLyricSlides = pptx.addNewSlide({ bkgd: '000000' });
+        pptxLyricSlides.addText(slideArr[i+1], {x: 1.25, y: '3%', font_size: 30, font_face: 'Helvetica', color: 'ffffff', align: 'center', valign: 'top'});
+      };
+  };
+
+  // this is done in the full loop below. just here for testing
+  pptx.save('Lyrics Slideshow');
+
+
+  };
+
+
 // ========= Musician Chords PDF ==========
   // // Create blank PDF document
   // var doc = new PDFDocument(
@@ -66,8 +152,6 @@
   //       	}).catch(function(e) {
   //       	console.error('Something terrible has happened!', e);
   //       });
-
-
 
 
 
@@ -728,3 +812,92 @@ var last3lines = oneSlide_SplitByNewline_Arr[3] + '\n' + oneSlide_SplitByNewline
       //   });
       //
       // };
+
+
+
+
+      // =================================================================================================
+      // ===================================== LYRICS ON PAPER (DOC) TEST???? ============================
+      // =================================================================================================
+      window.test = function () {
+        var filename = 'Lyrics on Paper';
+        // inputs
+          var title1 = document.getElementById("title1").value;
+          var chordsInput1 = document.getElementById("chords1").value;
+          var title2 = document.getElementById("title2").value;
+          var chordsInput2 = document.getElementById("chords2").value;
+          var title3 = document.getElementById("title3").value;
+          var chordsInput3 = document.getElementById("chords3").value;
+
+
+
+          //remove chords
+            var chordsInput1_v2 = chordsInput1.replace(/\b([CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m)*[\d\/]*(?:[CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m)*[\d\/]*)*)(?=\s|$)(?!\w)/gm, "");
+          //remove blank lines where chords used to be
+            var chordsInput1_v3 = chordsInput1_v2.replace(/^\s*[\r\n]*/gm, "");
+          //add a marker at the end of the input so the following code can find the last slide
+            var chordsInput1_v4 = chordsInput1_v3 + "[";
+
+
+              var docx = require('docx');
+
+              var doc = new docx.Document();
+              var paragraph = new docx.Paragraph("Some cool text here.");
+              var exporter = new docx.LocalPacker(doc);
+              exporter.pack('My Document');
+
+              // downloader
+              var pom = document.createElement('a');
+              pom.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(doc));
+              pom.setAttribute('download', exporter);
+              if (document.createEvent) {
+                  var event = document.createEvent('MouseEvents');
+                  event.initEvent('click', true, true);
+                  pom.dispatchEvent(event);
+              }
+              else {
+                  pom.click();
+              }
+
+              // const docx = require('docx');
+              // const express = require('express');
+              // const app = express();
+              //
+              //
+              // app.get("/", (req, res) => {
+              //     var doc = new docx.Document();
+              //
+              //     var paragraph = new docx.Paragraph("Hello World");
+              //
+              //     doc.addParagraph(paragraph);
+              //     const expressPacker = new docx.ExpressPacker(doc, res);
+              //     expressPacker.pack("Document");
+              //     // response.end("Hello world!");
+              // });
+
+
+              //
+              // const express = require('express');
+              // const app = express();
+              //
+              // app.get('/', (req, res) => res.send('Hello World!'));
+              //
+              // app.listen(3000, () => console.log('Example app listening on port 3000!'));
+
+
+            // const docx = require('docx');
+            //
+            // //CREATE FILE
+            //   var doc = new Document();
+            //
+            //
+            //   var paragraph = new docx.Paragraph(title1);
+            //   paragraph.addRun(new docx.TextRun(chordsInput1));
+            //
+            //   doc.addParagraph(paragraph);
+            //
+            //
+            //   //export file
+            //   var exporter = new docx.LocalPacker(doc);
+            //   exporter.pack('My First Document');
+            };

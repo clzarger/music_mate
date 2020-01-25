@@ -16,6 +16,7 @@
     "firebase": "^7.6.1",
     "fs": "0.0.1-security",
     "gulp4-run-sequence": "^1.0.0",
+    "moment": "^2.24.0",
     "nvm": "0.0.4",
     "officegen": "^0.4.8",
     "officegen-2": "^0.3.7",
