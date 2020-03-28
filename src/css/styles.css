@@ -39,6 +39,7 @@ div.container-fluid div.row div.col-sm a:active {
 }
 
 /* BUTTONS */
+/* Button Sample */
 .btn-sample {
   color: #FFFFFF;
   background-color: #F55E00;
@@ -55,40 +56,53 @@ div.container-fluid div.row div.col-sm a:active {
   border-color: #FFFFFF;
 }
 
-.btn-sample:active,
-.btn-sample.active,
-.open .dropdown-toggle.btn-sample {
-  background-image: none;
-}
 
-.btn-sample.disabled,
-.btn-sample[disabled],
-fieldset[disabled] .btn-sample,
-.btn-sample.disabled:hover,
-.btn-sample[disabled]:hover,
-fieldset[disabled] .btn-sample:hover,
-.btn-sample.disabled:focus,
-.btn-sample[disabled]:focus,
-fieldset[disabled] .btn-sample:focus,
-.btn-sample.disabled:active,
-.btn-sample[disabled]:active,
-fieldset[disabled] .btn-sample:active,
-.btn-sample.disabled.active,
-.btn-sample[disabled].active,
-fieldset[disabled] .btn-sample.active {
-  background-color: #F55E00;
+/* Button Secondary */
+.btn-secondary {
+  color: #FFFFFF;
+  background-color: rgb(90, 89, 88);
   border-color: #FFFFFF;
 }
 
-.btn-sample .badge {
-  color: #F55E00;
-  background-color: #FFFFFF;
+.btn-secondary:hover,
+.btn-secondary:focus,
+.btn-secondary:active,
+.btn-secondary.active,
+.open .dropdown-toggle.btn-secondary {
+  color: #FFFFFF;
+  background-color: rgb(149, 155, 158);
+  border-color: #FFFFFF;
+}
+
+/* Dropdown menu */
+.dropdown-menu {
+  color: rgb(149, 155, 158); /* nothing */
+  background-color: rgb(149, 155, 158); /* background of dropdown box top & bottom lines */
+  border-color: rgb(149, 155, 158); /* border of dropdown box */
+}
+
+/* Dropdown item */
+.dropdown-item {
+  color: rgb(149, 155, 158); /* nothing */
+  background-color: rgb(149, 155, 158); /* background of dropdown box around elements */
+  border-color: rgb(149, 155, 158);  /* nothing */
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus,
+.dropdown-item:active,
+.dropdown-item.active,
+.open .dropdown-toggle.dropdown-item {
+  color: #FFFFFF; /* nothing */
+  background-color: rgb(90, 89, 88); /* background of elements hovered over in dropdown */
+  border-color: rgb(167, 31, 31); /* nothing */
 }
 
 
 
 
 
+/* General text css */
 body {
   font-family: Helvetica, Arial, Verdana, Georgia;
   font-size: 16px;

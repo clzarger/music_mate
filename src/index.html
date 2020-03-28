@@ -70,10 +70,10 @@
     <div class="col-sm" style="padding-top: 8px; height: 40px;">
       <a href="./about.html">About</a>
     </div>
-    <div class="col-sm" style="padding-top: 8px; height: 40px;">
-      <a href="./works.html">How it works</a>
-    </div>
     <!-- <div class="col-sm" style="padding-top: 8px; height: 40px;">
+      <a href="./works.html">How it works</a>
+    </div> -->
+    <!-- <div class="col-sm" style="padding-top: 8px; height: 40px;">dd
       <a href="./give.html">Give</a>
     </div> -->
     <div class="col-sm" style="padding-top: 8px; height: 40px;">
@@ -240,34 +240,61 @@
 <br>
 
 <!-- ===================================== DOWNLOAD BUTTONS ===================================== -->
-<div class="row" style="margin-left: 20px">
+<!-- <div class="row" style="margin-left: 20px">    Was this to allow left padding-->
+<div class="row">
+  <div class="col-sm-3">
+    <p></p>
+  </div>
   <div class="col-sm">
-    <form>
-      <button id="slidesProgress" type="button" class="btn btn-sample btn-lg" onclick="slides()">Lyric Slideshow</button>
+    <form class="col text-center">
+      <button id="slidesProgress" type="button" class="btn btn-sample btn-lg" onclick="slides()">Lyric Slideshow</button> <br><br>
+        <div class="dropdown">
+          <button class="btn btn-secondary dropdown-toggle btn-sm" type="button" id="dropdownMenuLink" data-toggle="dropdown" aria-expanded="false">
+            Max lines per slide: 4
+          </button>
+          <div class="dropdown-menu"> 
+            <a class="dropdown-item" style="color:#FFFFFF" onclick="pickLines(2)" id="2">2</a>
+            <a class="dropdown-item" style="color:#FFFFFF" onclick="pickLines(3)" id="3">3</a>
+            <a class="dropdown-item" style="color:#FFFFFF" onclick="pickLines(4)" id="4">4</a>
+            <a class="dropdown-item" style="color:#FFFFFF" onclick="pickLines(5)" id="5">5</a>
+            <a class="dropdown-item" style="color:#FFFFFF" onclick="pickLines(6)" id="6">6</a>
+          </div>
+        </div>
+      
+      <!-- <button type="button" class="collapsible">Settings</button>
+        <div class="content">
+          <h5>Input max number of lines per slide (2-6 recommended, defaults to 4)</h5>
+          <input class="form-control" type="text" id="maxLinesPerSlide" placeholder="Max lines per slide">
+          </div> -->
     </form>
   </div>
   <div class="col-sm">
-    <form>
+    <form class="col text-center">
       <button id="handoutProgress" type="button" class="btn btn-sample btn-lg" onclick="handout()">Lyric Handout</button>
     </form>
   </div>
-  <div class="col-sm col">
-    <form>
+  <div class="col-sm">
+    <form class="col text-center">
       <button id="chordsProgress" type="button" class="btn btn-sample btn-lg" onclick="chords()">Musician Chords</button>
     </form>
   </div>
 
-<!-- test -->
-    <!-- <div class="col-sm col">
-      <form>
-        <button type="button" class="btn btn-sample btn-lg" onclick="test()">loop</button>
-      </form>
-    </div> -->
+  <!-- test -->
+      <!-- <div class="col-sm col">
+        <form>
+          <button type="button" class="btn btn-sample btn-lg" onclick="test()">loop</button>
+        </form>
+      </div> -->
 
-  <div class="col-sm-6">
-    <p></p>
-  </div>
+  <!-- Create a placeholder column on the right side of the page to left justify buttons -->
+    <div class="col-sm-3">
+      <p></p>
+    </div>
 </div>
+<br>
+<br>
+<br>
+<br>
 <br>
 <br>
 <br>

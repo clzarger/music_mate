@@ -2,6 +2,57 @@
 
 
 
+// ===================================== CSS code of what buttons used to look like =====================================
+// I took lines out that I found to be unnecessary
+/* Button Sample */
+.btn-sample {
+  color: #FFFFFF;
+  background-color: #F55E00;
+  border-color: #FFFFFF;
+}
+
+.btn-sample:hover,
+.btn-sample:focus,
+.btn-sample:active,
+.btn-sample.active,
+.open .dropdown-toggle.btn-sample {
+  color: #FFFFFF;
+  background-color: #00304B;
+  border-color: #FFFFFF;
+}
+
+.btn-sample:active,
+.btn-sample.active,
+.open .dropdown-toggle.btn-sample {
+  background-image: none;
+}
+
+.btn-sample.disabled,
+.btn-sample[disabled],
+fieldset[disabled] .btn-sample,
+.btn-sample.disabled:hover,
+.btn-sample[disabled]:hover,
+fieldset[disabled] .btn-sample:hover,
+.btn-sample.disabled:focus,
+.btn-sample[disabled]:focus,
+fieldset[disabled] .btn-sample:focus,
+.btn-sample.disabled:active,
+.btn-sample[disabled]:active,
+fieldset[disabled] .btn-sample:active,
+.btn-sample.disabled.active,
+.btn-sample[disabled].active,
+fieldset[disabled] .btn-sample.active {
+  background-color: #F55E00;
+  border-color: #FFFFFF;
+}
+
+.btn-sample .badge {
+  color: #F55E00;
+  background-color: #FFFFFF;
+}
+
+
+
 // ===================================== GET INPUTS FUNCTION =====================================
 function getInputs(numberOfSongs, titleArr, artistArr, lyricsArr) {
   // read in all title, artist, and lyric inputs from HTML side & make title case
