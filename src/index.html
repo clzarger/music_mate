@@ -207,103 +207,100 @@
   <div class="col-sm">
     <div class="card-body">
       <h1>Song 1</h1>
-	  	<input class="form-control" type="text" id="title1" placeholder="Title"> <br>
-      <input class="form-control" type="text" id="artist1" placeholder="Artist"> <br>
-	  	<textarea class="form-control" id="lyrics1" name="comments" cols="40" rows="10" placeholder="Lyrics & Chords" style= "font-size: 15" ></textarea>
+	  	<input class="form-control" type="text" id="title0" placeholder="Title"> <br>
+      <input class="form-control" type="text" id="artist0" placeholder="Artist"> <br>
+	  	<textarea class="form-control" id="lyrics0" name="comments" cols="40" rows="10" placeholder="Lyrics & Chords*" style= "font-size: 15" ></textarea>
     </div>
   </div>
   <div class="col-sm">
     <div class="card-body">
       <h1>Song 2</h1>
-  		<input class="form-control" type="text" id="title2" placeholder="Title"> <br>
-      <input class="form-control" type="text" id="artist2" placeholder="Artist"> <br>
-  		<textarea class="form-control" id="lyrics2" name="comments" cols="40" rows="10" placeholder="Lyrics & Chords" style="font-size: 15"></textarea>
+  		<input class="form-control" type="text" id="title1" placeholder="Title"> <br>
+      <input class="form-control" type="text" id="artist1" placeholder="Artist"> <br>
+  		<textarea class="form-control" id="lyrics1" name="comments" cols="40" rows="10" placeholder="Lyrics & Chords*" style="font-size: 15"></textarea>
     </div>
   </div>
   <div class="col-sm">
     <div class="card-body">
       <h1>Song 3</h1>
-  		<input class="form-control" type="text" id="title3" placeholder="Title"> <br>
-      <input class="form-control" type="text" id="artist3" placeholder="Artist"> <br>
-  		<textarea class="form-control" id="lyrics3" name="comments" cols="40" rows="10" placeholder="Lyrics & Chords" style="font-size: 15"></textarea>
+  		<input class="form-control" type="text" id="title2" placeholder="Title"> <br>
+      <input class="form-control" type="text" id="artist2" placeholder="Artist"> <br>
+  		<textarea class="form-control" id="lyrics2" name="comments" cols="40" rows="10" placeholder="Lyrics & Chords*" style="font-size: 15"></textarea>
     </div>
   </div>
   <div class="col-sm">
     <div class="card-body">
       <h1>Song 4</h1>
-      <input class="form-control" type="text" id="title4" placeholder="Title"> <br>
-      <input class="form-control" type="text" id="artist4" placeholder="Artist"> <br>
-      <textarea class="form-control" id="lyrics4" name="comments" cols="40" rows="10" placeholder="Lyrics & Chords" style="font-size: 15"></textarea>
+      <input class="form-control" type="text" id="title3" placeholder="Title"> <br>
+      <input class="form-control" type="text" id="artist3" placeholder="Artist"> <br>
+      <textarea class="form-control" id="lyrics3" name="comments" cols="40" rows="10" placeholder="Lyrics & Chords*" style="font-size: 15"></textarea>
     </div>
   </div>
 </div>
 <br>
 
 <!-- ===================================== DOWNLOAD BUTTONS ===================================== -->
-<!-- <div class="row" style="margin-left: 20px">    Was this to allow left padding-->
 <div class="row">
-  <div class="col-sm-3">
-    <p></p>
-  </div>
+  <!-- LYRIC SLIDESOW BUTTON -->
   <div class="col-sm">
     <form class="col text-center">
-      <button id="slidesProgress" type="button" class="btn btn-sample btn-lg" onclick="slides()">Lyric Slideshow</button> <br><br>
-        <div class="dropdown">
-          <button class="btn btn-secondary dropdown-toggle btn-sm" type="button" id="dropdownMenuLink" data-toggle="dropdown" aria-expanded="false">
-            Max lines per slide: 4
-          </button>
-          <div class="dropdown-menu"> 
-            <a class="dropdown-item" style="color:#FFFFFF" onclick="pickLines(2)" id="2">2</a>
-            <a class="dropdown-item" style="color:#FFFFFF" onclick="pickLines(3)" id="3">3</a>
-            <a class="dropdown-item" style="color:#FFFFFF" onclick="pickLines(4)" id="4">4</a>
-            <a class="dropdown-item" style="color:#FFFFFF" onclick="pickLines(5)" id="5">5</a>
-            <a class="dropdown-item" style="color:#FFFFFF" onclick="pickLines(6)" id="6">6</a>
-          </div>
+      <button id="slidesProgress" type="button" class="btn btn-sample btn-lg" onclick="slides()">Lyric Slideshow</button> <br>
+      <div class="dropdown">
+        <button class="btn btn-secondary dropdown-toggle btn-sm" type="button" id="dropdownMenuLink" data-toggle="dropdown" aria-expanded="false">
+          Max lines per slide: 4
+        </button>
+        <div class="dropdown-menu"> 
+          <a class="dropdown-item" style="color:#FFFFFF" onclick="pickLines(2)" id="2">2</a>
+          <a class="dropdown-item" style="color:#FFFFFF" onclick="pickLines(3)" id="3">3</a>
+          <a class="dropdown-item" style="color:#FFFFFF" onclick="pickLines(4)" id="4">4</a>
+          <a class="dropdown-item" style="color:#FFFFFF" onclick="pickLines(5)" id="5">5</a>
+          <a class="dropdown-item" style="color:#FFFFFF" onclick="pickLines(6)" id="6">6</a>
         </div>
-      
-      <!-- <button type="button" class="collapsible">Settings</button>
-        <div class="content">
-          <h5>Input max number of lines per slide (2-6 recommended, defaults to 4)</h5>
-          <input class="form-control" type="text" id="maxLinesPerSlide" placeholder="Max lines per slide">
-          </div> -->
+      </div>
+      <div style="font-size: 11px; color:rgb(149, 155, 158)">
+        ppt doesn't download on mobile
+      </div>
     </form>
   </div>
+  <!-- LYRIC HANDOUT BUTTON -->
   <div class="col-sm">
     <form class="col text-center">
       <button id="handoutProgress" type="button" class="btn btn-sample btn-lg" onclick="handout()">Lyric Handout</button>
     </form>
   </div>
+  <!-- MUSICIAN CHORDS BUTTON -->
   <div class="col-sm">
     <form class="col text-center">
       <button id="chordsProgress" type="button" class="btn btn-sample btn-lg" onclick="chords()">Musician Chords</button>
     </form>
   </div>
-
-  <!-- test -->
-      <!-- <div class="col-sm col">
-        <form>
-          <button type="button" class="btn btn-sample btn-lg" onclick="test()">loop</button>
-        </form>
-      </div> -->
-
-  <!-- Create a placeholder column on the right side of the page to left justify buttons -->
-    <div class="col-sm-3">
-      <p></p>
-    </div>
+  <!-- ADD A TEST BUTTON -->
+  <!-- <div class="col-sm col">
+    <form>
+      <button type="button" class="btn btn-sample btn-lg" onclick="test()">loop</button>
+    </form>
+  </div> -->
 </div>
 <br>
 <br>
 <br>
 <br>
-<br>
-<br>
-<br>
+<!-- NOTE ON INPUTS -->
+<div style="font-size: 12px; color:rgb(149, 155, 158)">
+  <p1>*Your Lyrics and Chords inputs are divided into slides based on brackets, so getting them from Ultimate Guitar is best.</p1>
+<div>
 <!-- ===================================== FOOTER ===================================== -->
+  <footer class="bottom" style="background-color:#00304B">
+    <div class="container">
+      <span class="col text-center">
+        
+      </span>
+    </div>
+  </footer>
+
+  <!-- Old Footer
 <div class="p-3 mb-2 bg-quick text-white" style="height:40px"></div>
-
-<!-- CENTER TEXT: div class .text-center -->
-
-</div>
+</div> -->
 
 <!-- ===================================== GLOBAL EFFECTS ===================================== -->
 <!--Boodstrap CDN -->

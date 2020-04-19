@@ -129,7 +129,7 @@ function reformatSlides(pptx, songName, songArtist, songLyrics, maxLinesPerSlide
     slideArr = slideArr.filter(item => item);
         
     //debug
-    console.log('finished slide array', slideArr, '\n');
+    // console.log('finished slide array', slideArr, '\n');
 
     // create blank pptx file
     pptx.setLayout('LAYOUT_4x3');
@@ -151,44 +151,59 @@ function reformatSlides(pptx, songName, songArtist, songLyrics, maxLinesPerSlide
   // ==========================================
 };
 window.slides = function () {
-    // update button to give user feedback
-    document.getElementById("slidesProgress").innerHTML = "Creating File..."
-    // set up input arrays to hold data from HTML side
-    var numberOfSongs = 4;
-    var titleArr = [];
-    var artistArr = [];
-    var lyricsArr = [];
-    // get inputs from HTML side
-    for (let i = 1; i < numberOfSongs+1; i++){
-      titleArr[i-1] = toTitleCase(document.getElementById("title"+i).value);
-      artistArr[i-1] = toTitleCase(document.getElementById("artist"+i).value);
-      lyricsArr[i-1] = document.getElementById("lyrics"+i).value;
+  // update button to give user feedback
+  document.getElementById("slidesProgress").innerHTML = "Creating File..."
+  // set up input arrays to hold data from HTML side
+  var numberOfSongs = 4;
+  var titleArr = [];
+  var artistArr = [];
+  var lyricsArr = [];
+  // get inputs from HTML side
+  for (let i = 0; i < numberOfSongs; i++){
+    titleArr[i] = toTitleCase(document.getElementById("title"+i).value);
+    artistArr[i] = toTitleCase(document.getElementById("artist"+i).value);
+    lyricsArr[i] = document.getElementById("lyrics"+i).value;
+  };
+  // if user inputs nothing, add a placeholder slide (DATA VALIDATION) (This if statement is dumb, but I couldn't think of a clean way)
+    if (titleArr[0]=="" && titleArr[1]=="" && titleArr[2]=="" && titleArr[3]=="" && artistArr[0]=="" && artistArr[1]=="" && artistArr[2]=="" && artistArr[3]=="" && lyricsArr[0]=="" && lyricsArr[1]=="" && lyricsArr[2]=="" && lyricsArr[3]=="") {
+      titleArr[0] = "Title";
+      artistArr[0] = "Artist";
+      lyricsArr[0] = "[]Song Lyrics";
     };
-    // var maxLinesPerSlide = 4;
-    // TEMP
-    // var maxLinesPerSlide = document.getElementById("maxLinesPerSlide").value;
-    // if input lyrics for a song are blank, remove that element
-    for (let i = 0; i < numberOfSongs; i++){
-      if (lyricsArr[i] == "") {
-        titleArr.splice(i, 1);
-        artistArr.splice(i, 1);
-        lyricsArr.splice(i, 1);
-        numberOfSongs = numberOfSongs - 1;
-        i = i - 1;
-      };
+  // if all inputs for a song are blank, remove that element (DATA VALIDATION)
+  debugger;
+  for (let i = 0; i < numberOfSongs; i++){
+    if (titleArr[i] == "" && artistArr[i] == "" && lyricsArr[i] == "") {
+      titleArr.splice(i, 1);
+      artistArr.splice(i, 1);
+      lyricsArr.splice(i, 1);
+      numberOfSongs = numberOfSongs - 1;
+      i = i - 1;
     };
+  };
+  // if user doesn't input a title, add a placeholder (DATA VALIDATION)
+  for (let i = 0; i < numberOfSongs; i++){
+    if (titleArr[i] == "") {
+      titleArr[i] = "Title";
+    };
+  };
+  // if user doesn't input an artist, add a placeholder (DATA VALIDATION)
+  for (let i = 0; i < numberOfSongs; i++){
+    if (artistArr[i] == "") {
+      artistArr[i] = "Artist";
+    };
+  };
 
-    // create PPT variable
-    var pptx = new PptxGenJS();
-    // reformat each input using reformatSlides function
-    for (let i = 0; i < numberOfSongs; i++){
-      reformatSlides(pptx, titleArr[i], artistArr[i], lyricsArr[i], maxLinesPerSlide);
-    };
-
-    // save & download pptx
-    pptx.save('Lyrics Slideshow');
-    // change user feedback button back to normal
-    document.getElementById("slidesProgress").innerHTML = "Lyric Slideshow"
+  // create PPT variable
+  var pptx = new PptxGenJS();
+  // reformat each input using reformatSlides function
+  for (let i = 0; i < numberOfSongs; i++){
+    reformatSlides(pptx, titleArr[i], artistArr[i], lyricsArr[i], maxLinesPerSlide);
+  };
+  // save & download pptx
+  pptx.save('Lyrics Slideshow');
+  // change user feedback button back to normal
+  document.getElementById("slidesProgress").innerHTML = "Lyric Slideshow"
   };
 
 // =================================================================================================
@@ -241,20 +256,38 @@ window.chords = function () {
   var titleArr = [];
   var artistArr = [];
   var lyricsArr = [];
-  // read in all title, artist, and lyric inputs from HTML side & make title case
-  for (let i = 1; i < numberOfSongs+1; i++){
-    titleArr[i-1] = toTitleCase(document.getElementById("title"+i).value);
-    artistArr[i-1] = toTitleCase(document.getElementById("artist"+i).value);
-    lyricsArr[i-1] = document.getElementById("lyrics"+i).value;
-  };
-  // if input lyrics for a song are blank, remove that element
+  // get inputs from HTML side
   for (let i = 0; i < numberOfSongs; i++){
-    if (lyricsArr[i] == "") {
+    titleArr[i] = toTitleCase(document.getElementById("title"+i).value);
+    artistArr[i] = toTitleCase(document.getElementById("artist"+i).value);
+    lyricsArr[i] = document.getElementById("lyrics"+i).value;
+  };
+  // if user inputs nothing, add a placeholder slide (DATA VALIDATION) (This if statement is dumb, but I couldn't think of a clean way)
+    if (titleArr[0]=="" && titleArr[1]=="" && titleArr[2]=="" && titleArr[3]=="" && artistArr[0]=="" && artistArr[1]=="" && artistArr[2]=="" && artistArr[3]=="" && lyricsArr[0]=="" && lyricsArr[1]=="" && lyricsArr[2]=="" && lyricsArr[3]=="") {
+      titleArr[0] = "Title";
+      artistArr[0] = "Artist";
+      lyricsArr[0] = "[]Song Lyrics";
+    };
+  // if all inputs for a song are blank, remove that element (DATA VALIDATION)
+  for (let i = 0; i < numberOfSongs; i++){
+    if (titleArr[i] == "" && artistArr[i] == "" && lyricsArr[i] == "") {
       titleArr.splice(i, 1);
       artistArr.splice(i, 1);
       lyricsArr.splice(i, 1);
       numberOfSongs = numberOfSongs - 1;
       i = i - 1;
+    };
+  };
+  // if user doesn't input a title, add a placeholder (DATA VALIDATION)
+  for (let i = 0; i < numberOfSongs; i++){
+    if (titleArr[i] == "") {
+      titleArr[i] = "Title";
+    };
+  };
+  // if user doesn't input an artist, add a placeholder (DATA VALIDATION)
+  for (let i = 0; i < numberOfSongs; i++){
+    if (artistArr[i] == "") {
+      artistArr[i] = "Artist";
     };
   };
 
@@ -345,15 +378,21 @@ window.handout = function () {
   var titleArr = [];
   var artistArr = [];
   var lyricsArr = [];
-  // read in all title, artist, and lyric inputs from HTML side & make title case
-  for (let i = 1; i < numberOfSongs+1; i++){
-    titleArr[i-1] = toTitleCase(document.getElementById("title"+i).value);
-    artistArr[i-1] = toTitleCase(document.getElementById("artist"+i).value);
-    lyricsArr[i-1] = document.getElementById("lyrics"+i).value;
-  };
-  // if input lyrics for a song are blank, remove that element
+  // get inputs from HTML side
   for (let i = 0; i < numberOfSongs; i++){
-    if (lyricsArr[i] == "") {
+    titleArr[i] = toTitleCase(document.getElementById("title"+i).value);
+    artistArr[i] = toTitleCase(document.getElementById("artist"+i).value);
+    lyricsArr[i] = document.getElementById("lyrics"+i).value;
+  };
+  // if user inputs nothing, add a placeholder slide (DATA VALIDATION) (This if statement is dumb, but I couldn't think of a clean way)
+    if (titleArr[0]=="" && titleArr[1]=="" && titleArr[2]=="" && titleArr[3]=="" && artistArr[0]=="" && artistArr[1]=="" && artistArr[2]=="" && artistArr[3]=="" && lyricsArr[0]=="" && lyricsArr[1]=="" && lyricsArr[2]=="" && lyricsArr[3]=="") {
+      titleArr[0] = "Title";
+      artistArr[0] = "Artist";
+      lyricsArr[0] = "[]Song Lyrics";
+    };
+  // if all inputs for a song are blank, remove that element (DATA VALIDATION)
+  for (let i = 0; i < numberOfSongs; i++){
+    if (titleArr[i] == "" && artistArr[i] == "" && lyricsArr[i] == "") {
       titleArr.splice(i, 1);
       artistArr.splice(i, 1);
       lyricsArr.splice(i, 1);
@@ -361,6 +400,19 @@ window.handout = function () {
       i = i - 1;
     };
   };
+  // if user doesn't input a title, add a placeholder (DATA VALIDATION)
+  for (let i = 0; i < numberOfSongs; i++){
+    if (titleArr[i] == "") {
+      titleArr[i] = "Title";
+    };
+  };
+  // if user doesn't input an artist, add a placeholder (DATA VALIDATION)
+  for (let i = 0; i < numberOfSongs; i++){
+    if (artistArr[i] == "") {
+      artistArr[i] = "Artist";
+    };
+  };
+
   // create blank PDF document
   var doc = new PDFDocument({
     // autoFirstPage: false,
