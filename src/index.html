@@ -246,7 +246,7 @@
     <form class="col text-center">
       <button id="slidesProgress" type="button" class="btn btn-sample btn-lg" onclick="slides()">Lyric Slideshow</button> <br>
       <div class="dropdown">
-        <button class="btn btn-secondary dropdown-toggle btn-sm" type="button" id="dropdownMenuLink" data-toggle="dropdown" aria-expanded="false">
+        <button class="btn btn-secondary dropdown-toggle btn-sm" type="button" id="dropdownMenuPickLines" data-toggle="dropdown" aria-expanded="false">
           Max lines per slide: 4
         </button>
         <div class="dropdown-menu"> 
@@ -257,6 +257,19 @@
           <a class="dropdown-item" style="color:#FFFFFF" onclick="pickLines(6)" id="6">6</a>
         </div>
       </div>
+      <div class="dropdown">
+        <button class="btn btn-secondary dropdown-toggle btn-sm" type="button" id="dropdownMenuPickFont" data-toggle="dropdown" aria-expanded="false">
+          Font size: 28
+        </button>
+        <div class="dropdown-menu"> 
+          <a class="dropdown-item" style="color:#FFFFFF" onclick="pickFont(20)" id="20">20</a>
+          <a class="dropdown-item" style="color:#FFFFFF" onclick="pickFont(24)" id="24">24</a>
+          <a class="dropdown-item" style="color:#FFFFFF" onclick="pickFont(28)" id="28">28</a>
+          <a class="dropdown-item" style="color:#FFFFFF" onclick="pickFont(32)" id="32">32</a>
+          <a class="dropdown-item" style="color:#FFFFFF" onclick="pickFont(36)" id="36">36</a>
+        </div>
+      </div>
+
       <div style="font-size: 11px; color:rgb(149, 155, 158)">
         ppt doesn't download on mobile
       </div>

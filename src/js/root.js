@@ -11,13 +11,24 @@ function toTitleCase(str) {
   });
 };
 
-// ===================================== PICK LINES FUNCTION =====================================
+// ===================================== PICK LINES FUNCTION ===================================== for lyric slideshow (ppt)
 window.maxLinesPerSlide = 4; // set default maxLinesPerSlide to 4
-window.pickLines = function (maxLinesInput) {
+window.pickLines = function(maxLinesInput) {
   // update dropdown name based on user selection
-  document.getElementById("dropdownMenuLink").innerHTML = "Max lines per slide: " + document.getElementById(maxLinesInput).innerHTML;
+  document.getElementById("dropdownMenuPickLines").innerHTML = "Max lines per slide: " + document.getElementById(maxLinesInput).innerHTML;
+  // update global variable for usage in main functions
   window.maxLinesPerSlide = maxLinesInput;
 };
+
+// ===================================== PICK FONT FUNCTION ===================================== for lyric slideshow (ppt)
+window.fontSize = 28; // set default fontSize to 28
+window.pickFont = function(fontSizeInput) {
+  // update dropdown name based on user selection
+  document.getElementById("dropdownMenuPickFont").innerHTML = "Font size: " + document.getElementById(fontSizeInput).innerHTML;
+  // update global variable for usage in main functions
+  window.fontSize = fontSizeInput;
+};
+
 
 
 // =================================================================================================
@@ -25,38 +36,41 @@ window.pickLines = function (maxLinesInput) {
 // =================================================================================================
 function reformatSlides(pptx, songName, songArtist, songLyrics, maxLinesPerSlide) {
     // Reformat input with REGEX (potentially helpful regex:\n.*\n.*\n.*$)
-      // remove chords (when I used ugs, just needed this and skipped the next two regex expressions)
-      var songLyrics_v1 = songLyrics.replace(/(\[ch\].*\[*c*h*\])/gm, "");
-        // remove chords
-        var songLyrics_v2 = songLyrics_v1.replace(/\b([CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m|add)*[\d\/]*(?:[CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m|add)*[\d\/]*)*)(?=\s|$)(?!\w)/gm, "");
-        // remove blank lines where chords used to be
-        var songLyrics_v3 = songLyrics_v2.replace(/^\s*[\r\n]*/gm, "");
+    // debugger;  
+    // remove chords (when I used ugs, just needed this and skipped the next two regex expressions)
+    var songLyrics_v1 = songLyrics.replace(/(\[ch\].*\[*c*h*\])/gm, "");
+    // remove chords
+    var songLyrics_v2 = songLyrics_v1.replace(/\b([CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m|add)*[\d\/]*(?:[CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m|add)*[\d\/]*)*)(?=\s|$)(?!\w)/gm, "");
+    // remove N.C. (no chord)
+    var songLyrics_v3 = songLyrics_v2.replace(/N\.C\./gm,"");
+    // remove blank lines where chords used to be
+    var songLyrics_v4 = songLyrics_v3.replace(/^\s*[\r\n]*/gm, "");
       // remove song intro text
-      var songLyrics_v4 = songLyrics_v3.replace(/".+[\s\S].+.[\s\S].+.[\s\S].+.[\s\S]/gm, "");
+      // var songLyrics_v4 = songLyrics_v3.replace(/".+[\s\S].+.[\s\S].+.[\s\S].+.[\s\S]/gm, "");
       // remove end of song " mark
-      var songLyrics_v5 = songLyrics_v4.replace(/"/gm, "");
-      // remove riff tabs (if present)
-      var songLyrics_v6 = songLyrics_v5.replace(/.\|-.*/gm, "");
-      // remove [solo] & [instrumental]
-      var songLyrics_v7 = songLyrics_v6.replace(/\[Solo\]|\[solo\]|\[Instrumental\]|\[instrumental\]/gm, "");
-      // remove % & |
-      var songLyrics_v8 = songLyrics_v7.replace(/\%*\|*/gm, "");
-      // remove extra spaces & blank lines
-      var songLyrics_regex_complete = songLyrics_v8.replace(/\r?\n\s*\n/gm, "\r\n");
+      // var songLyrics_v5 = songLyrics_v4.replace(/"/gm, "");
+    // remove riff tabs (if present)
+    var songLyrics_v6 = songLyrics_v4.replace(/.\|-.*/gm, "");
+    // remove [solo] & [instrumental]
+    var songLyrics_v7 = songLyrics_v6.replace(/\[Solo\]|\[solo\]|\[Instrumental\]|\[instrumental\]/gm, "");
+    // remove % & |
+    var songLyrics_v8 = songLyrics_v7.replace(/\%*\|*/gm, "");
+    // remove extra spaces & blank lines
+    var songLyrics_regex_complete = songLyrics_v8.replace(/\r?\n\s*\n/gm, "\r\n");
 
     // find number of slides
-      var numberOfSlides = (songLyrics_regex_complete.match(/\[/g) || []).length;
+    var numberOfSlides = (songLyrics_regex_complete.match(/\[/g) || []).length;
 
     // create arrays & first index (javascript arrays use 0 for the first entry. I set it to -1 & skip it)
-      let slideStartIndicesArr = [-1];
-      let slideArr_w_whitespace_headers = [-1];
-      let slideArr_w_whitespace = [-1];
-      let slideArr = [-1];
+    let slideStartIndicesArr = [-1];
+    let slideArr_w_whitespace_headers = [-1];
+    let slideArr_w_whitespace = [-1];
+    let slideArr = [-1];
 
     // find slide start indices based on brackets (and store in array)
-      for (let i = 0; i < numberOfSlides; i++){
-        slideStartIndicesArr[i+1] = songLyrics_regex_complete.indexOf("[", slideStartIndicesArr[i] + 1)
-      };  //i didn't put this loop in the next one because the isolate slides piece needs to have all indices ready
+    for (let i = 0; i < numberOfSlides; i++){
+      slideStartIndicesArr[i+1] = songLyrics_regex_complete.indexOf("[", slideStartIndicesArr[i] + 1)
+    };  //i didn't put this loop in the next one because the isolate slides piece needs to have all indices ready
 
     // sort input lyrics into slides & cleanup
     for (let i = 0; i < numberOfSlides; i++){
@@ -77,8 +91,6 @@ function reformatSlides(pptx, songName, songArtist, songLyrics, maxLinesPerSlide
       var numberOfNewLines = (slideArr[i+1].match(/\n/g) || []).length;
       // add one to find the actual number of lines (since the last line doesn't have a '\n', this step creates a more intuitive variable to work with)
       var numberOfLines = numberOfNewLines + 1;
-      // CHANGE TO USER INPUT
-      // var maxLinesPerSlide = 4;
       // split based on number of lines on the slide (if # of lines exceeds max, split it up)
       if (numberOfLines > maxLinesPerSlide) {
         // split up the loaded slide into an array by new line
@@ -95,7 +107,7 @@ function reformatSlides(pptx, songName, songArtist, songLyrics, maxLinesPerSlide
           };
           return tempArray;
         };
-        // find # of slides needed by dividing number of lines by 5, then taking the ceiling
+        // find # of slides needed by dividing number of lines by selected maxLinesPerSlide, then taking the ceiling
         var numberOfSlidesNeeded = Math.ceil(numberOfLines/maxLinesPerSlide);
         // find # of lines per slide
         var linesPerSlide = Math.ceil(numberOfLines/numberOfSlidesNeeded);
@@ -137,14 +149,14 @@ function reformatSlides(pptx, songName, songArtist, songLyrics, maxLinesPerSlide
       if (isNaN('Title')) {
         // create title slide
         var pptxTitleSlide = pptx.addNewSlide({ bkgd: '000000' });
-        pptxTitleSlide.addText(songName, {x: 1.25, y: 3.5, font_size: 40, font_face: 'Helvetica', color: 'ffffff', align: 'center', valign: 'middle'});
-        pptxTitleSlide.addText(songArtist, {x: 1.25, y: 4.5, font_size: 20, font_face: 'Helvetica', color: 'ffffff', align: 'center', valign: 'middle'});
+        pptxTitleSlide.addText(songName, {x: 0.25, y: 3.5, w:'95%', font_size: 40, font_face: 'Helvetica', color: 'ffffff', align: 'center', valign: 'middle'});
+        pptxTitleSlide.addText(songArtist, {x: 0.25, y: 4.5, w:'95%', font_size: 20, font_face: 'Helvetica', color: 'ffffff', align: 'center', valign: 'middle'});
 
         // loop to distribute slideArr to each slide in pptx
         // the length of slideArr is the # of slides. minus 1 b/c I have a -1 in the 0th slot
         for (let i = 0; i < slideArr.length - 1; i++){
           var pptxLyricSlides = pptx.addNewSlide({ bkgd: '000000' });
-          pptxLyricSlides.addText(slideArr[i+1], {x: 1.25, y: '3%', font_size: 30, font_face: 'Helvetica', color: 'ffffff', align: 'center', valign: 'top'});
+          pptxLyricSlides.addText(slideArr[i+1], {x: 0.25, y: '3%', w:'95%', font_size: fontSize, font_face: 'Helvetica', color: 'ffffff', align: 'center', valign: 'top'});
         };
       };
   // ===== end of reformatSlides function =====
@@ -171,7 +183,6 @@ window.slides = function () {
       lyricsArr[0] = "[]Song Lyrics";
     };
   // if all inputs for a song are blank, remove that element (DATA VALIDATION)
-  debugger;
   for (let i = 0; i < numberOfSongs; i++){
     if (titleArr[i] == "" && artistArr[i] == "" && lyricsArr[i] == "") {
       titleArr.splice(i, 1);
