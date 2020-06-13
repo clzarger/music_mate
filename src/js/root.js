@@ -29,6 +29,25 @@ window.pickFont = function(fontSizeInput) {
   window.fontSize = fontSizeInput;
 };
 
+// ===================================== PICK COLUMNS FUNCTION ===================================== for musician chords (pdf)
+window.numberOfColumns = 1; // set default number of columns to 1
+window.pickColumns = function(numberOfColumnsInput) {
+  // update dropdown name based on user selection
+  document.getElementById("dropdownMenuPickColumns").innerHTML = "Number of columns: " + document.getElementById(numberOfColumnsInput).innerHTML;
+  // update global variable for usage in main functions
+  window.numberOfColumns = numberOfColumnsInput;
+};
+
+// ===================================== PICK LAYOUT FUNCTION ===================================== for musician chords (pdf)
+window.pageLayout = 'landscape'; // set default page layout to landscape
+window.pickLayout= function(pageLayoutInput) {
+  // update dropdown name based on user selection
+  document.getElementById("dropdownMenuPickLayout").innerHTML = "Page layout: " + document.getElementById(pageLayoutInput).innerHTML;
+  // update global variable for usage in main functions
+  window.pageLayout = pageLayoutInput;
+};
+
+
 
 // =================================================================================================
 // ===================================== LYRIC SLIDESHOW (PPT) =====================================
@@ -80,6 +99,12 @@ function reformatSlides(pptx, songName, songArtist, songLyrics, maxLinesPerSlide
       slideArr[i+1] = slideArr_w_whitespace[i+1].trim();
     };
       
+    // FIX THIS. Right here...I have my slideArr, which is an array where each elements is a slide.
+    // I need to take each element in it and chop up lines that are too long. aka add more elements
+    // that can hold the too long lines. THEN my next code can execute, which divides up those
+    // logically split slides into furhter sub slides if there are too many lines per slide.
+    // If I use a fixed width font, I can set some number of characters as a limit to split by.
+
     // *MAIN LOOP*
     // split up slides that have too many lines, loads in one slide at a time using: slideArr[i+1]
     for (let i = 0; i < numberOfSlides; i++){
@@ -210,7 +235,11 @@ window.slides = function () {
     reformatSlides(pptx, titleArr[i], artistArr[i], lyricsArr[i], maxLinesPerSlide);
   };
   // save & download pptx
-  pptx.save('Lyrics Slideshow');
+  if (numberOfSongs == 1 && titleArr[0] !== "Title" && artistArr[0] !== "Artist") {
+    pptx.save('Lyric Slideshow ' + '(' + titleArr[0] + ' - ' + artistArr[0] + ')');
+  } else {
+    pptx.save('Lyric Slideshow');
+  };
   // change user feedback button back to normal
   document.getElementById("slidesProgress").innerHTML = "Lyric Slideshow"
   };
@@ -245,41 +274,41 @@ function reformatHandout(doc, songName, songArtist, songLyrics){
     var songLyrics_regex_complete = songLyrics_v9.replace(/\r\n/gm, "\n");
 
 
-    // split the text into an array by new line
-    var songLyrics_SplitByNewline_Arr = songLyrics_regex_complete.split(/\n/g);
+  // split the text into an array by new line
+  var songLyrics_SplitByNewline_Arr = songLyrics_regex_complete.split(/\n/g);
 
-    // Page Creation
-    // doc.addPage({
-    // layout: 'landscape',
-    //   margin: 25,
-    // });
-    doc.font('Courier-Bold');
-    doc.fontSize(13);
-    doc.text(songName + " - " + songArtist, {
-      columns: 1,
-    });
-      doc.moveDown();
-      doc.fontSize(12);
-      // loop through the array of input text and bold lines with chords & brackets "["
-      for (let i = 0; i < songLyrics_SplitByNewline_Arr.length; i++){
-        // identifies all chords & lines with brackets "[" & makes them bold
-        if (/\b([CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m|add)*[\d\/]*(?:[CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m|add)*[\d\/]*)*)(?=\s|$)(?!\w)|\[/gm.test(songLyrics_SplitByNewline_Arr[i])) {
-          doc.font('Courier-Bold');
-          doc.text(songLyrics_SplitByNewline_Arr[i], {
-            columns: 1,
-          });
-        // leaves lyric text not bold
-        } else {
-          doc.font('Courier');
-          doc.text(songLyrics_SplitByNewline_Arr[i], {
-            columns: 1,
-          });
-        };
+  // Page Creation
+  // doc.addPage({
+  // layout: 'landscape',
+  //   margin: 25,
+  // });
+  doc.font('Courier-Bold');
+  doc.fontSize(13);
+  doc.text(songName + " - " + songArtist, {
+    columns: 1,
+  });
+    doc.moveDown();
+    doc.fontSize(12);
+    // loop through the array of input text and bold lines with chords & brackets "["
+    for (let i = 0; i < songLyrics_SplitByNewline_Arr.length; i++){
+      // identifies all chords & lines with brackets "[" & makes them bold
+      if (/\b([CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m|add)*[\d\/]*(?:[CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m|add)*[\d\/]*)*)(?=\s|$)(?!\w)|\[/gm.test(songLyrics_SplitByNewline_Arr[i])) {
+        doc.font('Courier-Bold');
+        doc.text(songLyrics_SplitByNewline_Arr[i], {
+          columns: 1,
+        });
+      // leaves lyric text not bold
+      } else {
+        doc.font('Courier');
+        doc.text(songLyrics_SplitByNewline_Arr[i], {
+          columns: 1,
+        });
       };
-        doc.moveDown();
-        // ===== end of reformatHandout function =====
-        // ==========================================
     };
+      doc.moveDown();
+      // ===== end of reformatHandout function =====
+      // ==========================================
+  };
 window.handout = function () {
   // update button to give user feedback
   document.getElementById("handoutProgress").innerHTML = "Creating File..."
@@ -338,9 +367,15 @@ window.handout = function () {
   };
   // save document
   doc.end();
+  
+  // pick filename
+  if (numberOfSongs == 1 && titleArr[0] !== "Title" && artistArr[0] !== "Artist") {
+    var filename = ('Lyric Handout ' + '(' + titleArr[0] + ' - ' + artistArr[0] + ')');
+  } else {
+    var filename = 'Lyric Handout';
+  };
 
   // downloader
-  var filename = 'Lyric Handout';
   stream.on('finish', function () {
     var pom = document.createElement('a');
     pom.setAttribute('href', stream.toBlobURL('application/pdf'));
@@ -364,38 +399,117 @@ window.handout = function () {
 // =================================================================================================
 function reformatChords(doc, songName, songArtist, songLyrics){
   // Reformat input with REGEX
-  // var songLyrics ="Cornerstone by Hillsong\n\n[Intro]\n\n[ch]C[\/ch]   [ch]Am[\/ch]   [ch]F[\/ch]  [ch]G[\/ch]\n\n\n[Verse 1]\n\n[ch]C[\/ch]\nMy hope is built on nothing less\n[ch]F[\/ch]                     [ch]G[\/ch]\nThan Jesus\' blood and righteousness\n[ch]Am[\/ch]"
-  // remove song intro text
-  // var songLyrics2 = songLyrics.replace(/".+[\s\S].+.[\s\S].+.[\s\S].+.[\s\S]/gm, "");
-  // remove Ð
-  // var songLyrics3 = songLyrics2.replace(/\n\n\n/gm, "\n");
-  // var songLyrics6 = songLyrics3.replace(/\n\n/gm, "\n");
-  // remove [ch] & [/ch]
-  var songLyrics_v1 = songLyrics.replace(/\[ch\]/gm, "");
-  var songLyrics_v2 = songLyrics_v1.replace(/\[\/ch\]/gm, "");
-  //remove Ð
-  var songLyrics_regex_complete = songLyrics_v2.replace(/\r\n/gm, "\n");
-  // remove end of song " mark
-  // var songLyrics7 = songLyrics6.replace(/"/gm, "");
-  // remove riff tabs (if present)
-  // var songLyrics9 = songLyrics7.replace(/.\|-.*/gm, "");
-  // remove extra spaces & blank lines
-  // var songLyrics9 = songLyrics8.replace(/\r?\n\s*\n/gm, "\r\n");
-
+    // var songLyrics ="Cornerstone by Hillsong\n\n[Intro]\n\n[ch]C[\/ch]   [ch]Am[\/ch]   [ch]F[\/ch]  [ch]G[\/ch]\n\n\n[Verse 1]\n\n[ch]C[\/ch]\nMy hope is built on nothing less\n[ch]F[\/ch]                     [ch]G[\/ch]\nThan Jesus\' blood and righteousness\n[ch]Am[\/ch]"
+    // remove song intro text
+    // var songLyrics2 = songLyrics.replace(/".+[\s\S].+.[\s\S].+.[\s\S].+.[\s\S]/gm, "");
+    // remove Ð
+    // var songLyrics3 = songLyrics2.replace(/\n\n\n/gm, "\n");
+    // var songLyrics6 = songLyrics3.replace(/\n\n/gm, "\n");
+    // remove [ch] & [/ch]
+    var songLyrics_v1 = songLyrics.replace(/\[ch\]/gm, "");
+    var songLyrics_v2 = songLyrics_v1.replace(/\[\/ch\]/gm, "");
+    //remove Ð
+    var songLyrics_v3 = songLyrics_v2.replace(/\r\n/gm, "\n");
+    // remove end of song " mark
+    // var songLyrics7 = songLyrics6.replace(/"/gm, "");
+    // remove riff tabs (if present)
+    // var songLyrics9 = songLyrics7.replace(/.\|-.*/gm, "");
+    // remove extra spaces & blank lines
+    var songLyrics_v4 = songLyrics_v3.replace(/\r?\n\s*\n/gm, "\r\n");
+    //remove Ð
+    var songLyrics_regex_complete = songLyrics_v4.replace(/\r\n/gm, "\n");
   
+
   // split the text into an array by new line
   var songLyrics_SplitByNewline_Arr = songLyrics_regex_complete.split(/\n/g);
+
+
+    // WORKING HERE =====
+  // function chunkArray(myArray, chunk_size){
+  //   var index = 0;
+  //   var arrayLength = myArray.length;
+  //   var tempArray = [];
+  //   for (index = 0; index < arrayLength; index += chunk_size) {
+  //     // if (/\b([CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m|add)*[\d\/]*(?:[CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m|add)*[\d\/]*)*)(?=\s|$)(?!\w)|\[/gm.test(songLyrics_SplitByNewline_Arr)) {
+  //       var myChunk = myArray.slice(index, index + chunk_size);
+  //     // };
+  //     // Do something if you want with the group
+  //     tempArray.push(myChunk);
+  //   };
+  //   return tempArray;
+  // };
+
+  // // chunk into groups that are equal to the number of lines per slide
+  // var chunkedArrayNew = chunkArray(songLyrics_SplitByNewline_Arr, 1);
+  // // array to string function
+  // function arrayToString(array) {
+  //   var string = "";
+  //   for (let j = 0; j < array.length; j++){
+  //     var string = string + array[j] + '\n';
+  //   };
+  //   return string = string.slice(0, -1);
+  // };
+  // // convert arrays (so they can properly be added to the master slides aka slideArr)
+  // // if you don't do this, it adds the array as a single element, which breaks things
+  // var chunkedStringNew = [];
+  // for (let k = 0; k < chunkedArrayNew.length; k++){
+  //   chunkedStringNew[k] = arrayToString(chunkedArrayNew[k]);
+  // };
+  // // at current index, remove 0 elements, then add the text to that position
+  // for (let l = 0; l < chunkedStringNew.length; l++){
+  //   songLyrics_SplitByNewline_Arr.splice(i+1+l, 0, chunkedStringNew[l]);
+  // };
+  // // skip ahead of the two split slides I just inserted & remove the old combined one
+  // songLyrics_SplitByNewline_Arr.splice(i+1+chunkedStringNew.length, 1);
+      // debugger;
+
+      // var songLyrics_PairedLines_Arr = [];
+      // // split songLyrics_SplitByNewline_Arr into a new array that combines array elements
+      // // that have both chords & lyrics 
+      // for (let i = 0; i < songLyrics_SplitByNewline_Arr.length; i++){
+      //   if (/\b([CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m|add)*[\d\/]*(?:[CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m|add)*[\d\/]*)*)(?=\s|$)(?!\w)|\[/gm.test(songLyrics_SplitByNewline_Arr[i])) {
+      //     var slicedOutTwoLines = songLyrics_SplitByNewline_Arr.slice(i, i + 2);
+      //     songLyrics_PairedLines_Arr = songLyrics_PairedLines_Arr.push(slicedOutTwoLines);
+      //   } else {
+      //     songLyrics_PairedLines_Arr = songLyrics_PairedLines_Arr.push(songLyrics_SplitByNewline_Arr[i]);
+      //   };
+      // };
+
+      // console.log(songLyrics_PairedLines_Arr);
+
+  // then loop through the array & chunk too long ones into smaller bits (as I do in other code)
+    // for (let i = 0; i < songLyrics_SplitByNewline_Arr.length; i++){
+    //   var test = doc.widthOfString(songLyrics_SplitByNewline_Arr[i]);
+    //   console.log(test);
+    // };
+
+    //THE CONCEPT:
+    // split it up into an array that has chords tied with text, aka 2 lines per element
+    // identify width of string, then split long lines into 2 elements if above a threshold
+    // THEN do the normal split so that it can insert things in bold
+
+    //THE ISSUE:
+    // I can't take advantage of the built in 2 column functionality because you have to
+    // insert all of the text at once so the package can tell when to wrap to 2 columns.
+    // If I feed my text in this way, I won't be able to bold some lines
+
+    //SOLUTION?
+    // Build it into one doc, then put all of the sorted text from that one into another one?
+
+    // END WORKING HERE
+
+    //  debugger;
 
   // Create pages
   doc.addPage({
     // this seems to only affect the first page inserted
-    layout: 'portrait',
+    layout: pageLayout,
     margin: 20, 
   });
     doc.font('Courier-Bold');
     doc.fontSize(13);
     doc.text(songName + " - " + songArtist, {
-      columns: 2,
+      columns: numberOfColumns,
     });
       doc.moveDown();
       doc.fontSize(12);
@@ -405,13 +519,13 @@ function reformatChords(doc, songName, songArtist, songLyrics){
         if (/\b([CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m|add)*[\d\/]*(?:[CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m|add)*[\d\/]*)*)(?=\s|$)(?!\w)|\[/gm.test(songLyrics_SplitByNewline_Arr[i])) {
           doc.font('Courier-Bold');
           doc.text(songLyrics_SplitByNewline_Arr[i], {
-            columns: 1,
+            columns: numberOfColumns,
           });
         // leaves lyric text not bold
         } else {
           doc.font('Courier');
           doc.text(songLyrics_SplitByNewline_Arr[i], {
-            columns: 1,
+            columns: numberOfColumns,
           });
         };
       };
@@ -465,7 +579,7 @@ window.chords = function () {
   // create blank PDF document
   var doc = new PDFDocument({
       autoFirstPage: false, // setting things in here seems to do nothing
-      layout: 'portrait', // this affects subsequent pages that each addPage overflows content to 
+      layout: pageLayout, // this affects subsequent pages that each addPage overflows content to  (portrait or landscape)
     });
   // change blank PDF document to a blob stream (add content after this call)
   window.stream = doc.pipe(blobStream());
@@ -477,8 +591,14 @@ window.chords = function () {
   // save document
   doc.end();
 
+  // pick filename (if only one song is input along with a title & artist, change filename to be the name of that song)
+  if (numberOfSongs == 1 && titleArr[0] !== "Title" && artistArr[0] !== "Artist") {
+    var filename = ('Musician Chords ' + '(' + titleArr[0] + ' - ' + artistArr[0] + ')');
+  } else {
+    var filename = 'Musician Chords';
+  };
+
   // downloader
-  var filename = 'Musician Chords';
   stream.on('finish', function () {
     var pom = document.createElement('a');
     pom.setAttribute('href', stream.toBlobURL('application/pdf'));
