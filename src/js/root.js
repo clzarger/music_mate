@@ -461,21 +461,21 @@ function reformatChords(doc, songName, songArtist, songLyrics){
   // };
   // // skip ahead of the two split slides I just inserted & remove the old combined one
   // songLyrics_SplitByNewline_Arr.splice(i+1+chunkedStringNew.length, 1);
-      // debugger;
+  // debugger;
 
-      // var songLyrics_PairedLines_Arr = [];
-      // // split songLyrics_SplitByNewline_Arr into a new array that combines array elements
-      // // that have both chords & lyrics 
-      // for (let i = 0; i < songLyrics_SplitByNewline_Arr.length; i++){
-      //   if (/\b([CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m|add)*[\d\/]*(?:[CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m|add)*[\d\/]*)*)(?=\s|$)(?!\w)|\[/gm.test(songLyrics_SplitByNewline_Arr[i])) {
-      //     var slicedOutTwoLines = songLyrics_SplitByNewline_Arr.slice(i, i + 2);
-      //     songLyrics_PairedLines_Arr = songLyrics_PairedLines_Arr.push(slicedOutTwoLines);
-      //   } else {
-      //     songLyrics_PairedLines_Arr = songLyrics_PairedLines_Arr.push(songLyrics_SplitByNewline_Arr[i]);
-      //   };
-      // };
+  // var songLyrics_PairedLines_Arr = [];
+  // // split songLyrics_SplitByNewline_Arr into a new array that combines array elements
+  // // that have both chords & lyrics 
+  // for (let i = 0; i < songLyrics_SplitByNewline_Arr.length; i++){
+  //   if (/\b([CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m|add)*[\d\/]*(?:[CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m|add)*[\d\/]*)*)(?=\s|$)(?!\w)|\[/gm.test(songLyrics_SplitByNewline_Arr[i])) {
+  //     var slicedOutTwoLines = songLyrics_SplitByNewline_Arr.slice(i, i + 2);
+  //     songLyrics_PairedLines_Arr = songLyrics_PairedLines_Arr.push(slicedOutTwoLines);
+  //   } else {
+  //     songLyrics_PairedLines_Arr = songLyrics_PairedLines_Arr.push(songLyrics_SplitByNewline_Arr[i]);
+  //   };
+  // };
 
-      // console.log(songLyrics_PairedLines_Arr);
+  // console.log(songLyrics_PairedLines_Arr);
 
   // then loop through the array & chunk too long ones into smaller bits (as I do in other code)
     // for (let i = 0; i < songLyrics_SplitByNewline_Arr.length; i++){
@@ -498,7 +498,7 @@ function reformatChords(doc, songName, songArtist, songLyrics){
 
     // END WORKING HERE
 
-    //  debugger;
+  // debugger;
 
   // Create pages
   doc.addPage({

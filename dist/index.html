@@ -4,7 +4,6 @@
 <!-- ================================================================================== -->
 <!-- ===================================== HEADER ===================================== -->
 <!-- ================================================================================== -->
-
 <head>
 <!-- ===================================== GOOGLE ANALYTICS ===================================== -->
 <!-- Global site tag (gtag.js) -->
@@ -23,9 +22,11 @@
   <!-- ===================================== MAIN HEADER ===================================== -->
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <title>QuickChords</title>
-  <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
-  <link rel="icon" href="/favicon.png" />
+  <title>MusicMate</title>
+  <!-- <link rel="shortcut icon" href="/mm_favicon.png" type="image/x-icon" /> -->
+  <!-- <link rel="icon" href="/mm_favicon.png" /> -->
+  <link rel="icon" href="/mm_favicon.png" type="image/png" />
+
 
   <!-- ===================================== FIREBASE ===================================== -->
   <script src="https://www.gstatic.com/firebasejs/4.7.0/firebase.js"></script>
@@ -52,7 +53,6 @@
 <!-- ================================================================================== -->
 <!-- ===================================== BODY ======================================= -->
 <!-- ================================================================================== -->
-
 <body>
 
 <!-- ===================================== NAVBAR ===================================== -->
@@ -80,7 +80,7 @@
 
     </div>
   </div>
-  <br>
+</div>
 
 
 <!-- ===================================== CAROUSEL ===================================== -->
@@ -113,31 +113,50 @@
     <span class="sr-only">Next</span>
   </a>
 </div> -->
-  <div id="carouselExampleIndicators" class="carousel slide" data-ride="carousel">
+  <!-- <div id="carouselExampleIndicators" class="carousel slide" data-ride="carousel"> -->
 
 
 <!-- ===================================== BIG LOGO ===================================== -->
- <div class="container">
-   <div class="row justify-content-center">
-     <div class="col align-self-center">
-       <img src="logoWithName.png" class="img-fluid" height=200 alt="Responsive image">
-     </div>
-     <div class="col align-self-center">
-       <h1 style="color:#00304B">Changing the way you play.<br>
-         <h5>Quick Chords eliminates prep time for leading music. <br>
-        Enter however many songs you'd like and click a button!</h5></h1>
-       </div>
-   </div>
- </div>
+<div class="px-5 py-3 container-fluid">
+  <div class="row justify-content-center">
+    <div class="col-2">
+
+    </div>
+    <div class="col-8 align-self-center">
+      <img src="mm_logo_long.png" class="img-fluid" height=200 alt="Responsive image">
+    </div>
+    <div class="col-2">
+
+    </div>
+  </div>
+</div>
+
+
+<!-- ===================================== LANDING DESCRIPTION ===================================== -->
+<div class="container-fluid text-white" style="background-color: #f55e00">
+  <div class="row-4">
+    <div class="col-3">
+      <h1>test</h1>
+    </div>
+    <div class="col-6 justify-content-between align-self-center">
+        <h1 class="font-weight-bold">Changing the way you play.</h1>
+        <h5>Music Mate eliminates prep time for leading music.</h5>
+    </div>
+    <div class="col-3 justify-content-between">
+      <h1>test</h1>
+    </div>
+  </div>
+</div>
 
 <!-- ===================================== INSTRUCTIONS (Copy. Paste. Play.)===================================== -->
-<div class="p-3 mb-2 bg-quick text-white" style="padding-left: 20 px; padding-right: 20 px">
+<div class="p-3 mb-0 bg-quick text-white" style="padding-left: 20 px; padding-right: 20 px">
   <div class="row">
     <div class="col-sm">
       <div class="card border-0 bg-transparent mb-3" style="width: 50" class="mx-auto">
         <img class="mx-auto" src="copy.png" alt="Copy graphic">
         <div class="card-body">
-          <h1 class="card-title">Copy.</h1>
+          <!-- <h1 class="card-title">Copy.</h1> -->
+          <h1 class="font-weight-bold">Copy.</h1>
           <h5 class="card-text">Go to ultimate-guitar.com to find songs. Copy all lyric headers & guitar chords.</h5>
         </div>
       </div>
@@ -146,7 +165,8 @@
       <div class="card border-0 bg-transparent mb-3" style="width: 50" class="mx-auto">
         <img class="mx-auto" src="paste.png" alt="Paste graphic">
         <div class="card-body">
-          <h1 class="card-title">Paste.</h1>
+          <!-- <h1 class="card-title">Paste.</h1> -->
+          <h1 class="font-weight-bold">Paste.</h1>
           <h5 class="card-text">Paste each song below in the reformater.</h5>
         </div>
       </div>
@@ -155,14 +175,14 @@
       <div class="card border-0 bg-transparent mb-3" style="width: 50" class="mx-auto">
       <img class="mx-auto" src="play.png" alt="Play graphic">
         <div class="card-body">
-          <h1 class="card-title">Play.</h1>
+          <!-- <h1 class="card-title">Play.</h1> -->
+          <h1 class="font-weight-bold">Play.</h1>
           <h5 class="card-text">Try all the buttons! Each button puts all the songs in a single file, but applies a different formatting.<h5>
         </div>
       </div>
     </div>
   </div>
 </div>
-<br>
 
 <!-- ===================================== ***DEVELOPMENT** INPUT TEXT BOXES ===================================== -->
 <!-- <div class="row border-blue bg-transparent mb-3">
@@ -206,7 +226,7 @@
 <div class="row border-blue bg-transparent mb-3">
   <div class="col-sm">
     <div class="card-body">
-      <h1>Song 1</h1>
+      <h1 class="font-weight-bold">Song 1</h1>
 	  	<input class="form-control" type="text" id="title0" placeholder="Title"> <br>
       <input class="form-control" type="text" id="artist0" placeholder="Artist"> <br>
 	  	<textarea class="form-control" id="lyrics0" name="comments" cols="40" rows="10" placeholder="Lyrics & Chords*" style= "font-size: 15" ></textarea>
@@ -214,7 +234,7 @@
   </div>
   <div class="col-sm">
     <div class="card-body">
-      <h1>Song 2</h1>
+      <h1 class="font-weight-bold">Song 2</h1>
   		<input class="form-control" type="text" id="title1" placeholder="Title"> <br>
       <input class="form-control" type="text" id="artist1" placeholder="Artist"> <br>
   		<textarea class="form-control" id="lyrics1" name="comments" cols="40" rows="10" placeholder="Lyrics & Chords*" style="font-size: 15"></textarea>
@@ -222,7 +242,7 @@
   </div>
   <div class="col-sm">
     <div class="card-body">
-      <h1>Song 3</h1>
+      <h1 class="font-weight-bold">Song 3</h1>
   		<input class="form-control" type="text" id="title2" placeholder="Title"> <br>
       <input class="form-control" type="text" id="artist2" placeholder="Artist"> <br>
   		<textarea class="form-control" id="lyrics2" name="comments" cols="40" rows="10" placeholder="Lyrics & Chords*" style="font-size: 15"></textarea>
@@ -230,14 +250,15 @@
   </div>
   <div class="col-sm">
     <div class="card-body">
-      <h1>Song 4</h1>
+      <h1 class="font-weight-bold">Song 4</h1>
       <input class="form-control" type="text" id="title3" placeholder="Title"> <br>
       <input class="form-control" type="text" id="artist3" placeholder="Artist"> <br>
       <textarea class="form-control" id="lyrics3" name="comments" cols="40" rows="10" placeholder="Lyrics & Chords*" style="font-size: 15"></textarea>
     </div>
   </div>
 </div>
-<hr/>
+<!-- horizontal line -->
+<hr/> 
 <br>
 
 <!-- ===================================== DOWNLOAD BUTTONS ===================================== -->
@@ -285,7 +306,7 @@
   <div class="col-sm">
     <form class="col text-center">
       <button id="chordsProgress" type="button" class="btn btn-sample btn-lg" onclick="chords()">Musician Chords</button>
-      <div class="dropdown">
+      <!-- <div class="dropdown">
         <button class="btn btn-secondary dropdown-toggle btn-sm" type="button" id="dropdownMenuPickColumns" data-toggle="dropdown" aria-expanded="false">
           Number of columns: 1
         </button>
@@ -302,7 +323,7 @@
           <a class="dropdown-item" style="color:#FFFFFF" onclick="pickLayout('landscape')" id="landscape">horizontal</a>
           <a class="dropdown-item" style="color:#FFFFFF" onclick="pickLayout('portrait')" id="portrait">vertical</a>
         </div>
-      </div>
+      </div> -->
     </form>
   </div>
   <!-- ADD A TEST BUTTON -->

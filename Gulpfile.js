@@ -38,16 +38,14 @@ function copyStatic(cb) {
 		'./src/give.html',
 		'./src/css/styles.css',
 			// Images
-		'./src/favicon.png',
-		'./src/logoWithName.png',
 		'./src/copy.png',
 		'./src/paste.png',
 		'./src/play.png',
-		'./src/1.png',
-		'./src/2.png',
-		'./src/3.png',
-		'./src/4.png',
-
+		'./src/mm_logo_long.png',
+		'./src/mm_logo_stacked.png',
+		'./src/mm_favicon.png',
+		'./src/favicon.png',
+		
 		'./node_modules/pptxgenjs/dist/pptxgen.bundle.js',
 		'./node_modules/express/lib/express.js'
 	]).pipe(gulp.dest('./dist'));

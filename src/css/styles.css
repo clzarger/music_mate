@@ -104,7 +104,7 @@ div.container-fluid div.row div.col-sm a:active {
 
 /* General text css */
 body {
-  font-family: Helvetica, Arial, Verdana, Georgia;
+  font-family: Open Sans, sans-serif, Helvetica, Arial, Verdana, Georgia;
   font-size: 16px;
   position: relative;
   width: 100%;
