@@ -22,7 +22,7 @@
   <!-- ===================================== MAIN HEADER ===================================== -->
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <title>MusicMate</title>
+  <title>Music Mate</title>
   <!-- <link rel="shortcut icon" href="/mm_favicon.png" type="image/x-icon" /> -->
   <!-- <link rel="icon" href="/mm_favicon.png" /> -->
   <link rel="icon" href="/mm_favicon.png" type="image/png" />
@@ -56,32 +56,22 @@
 <body>
 
 <!-- ===================================== NAVBAR ===================================== -->
-<div class="container-fluid">
-  <div class="row text-center" style="background-color:#00304B">
-    <!-- <div class="col-sm" style="background-color:#323232; padding-top: 4px; padding-bottom: 4px; height: 40px;">
-      <img class="mx-auto" src="favicon.png" alt="Copy image">
-    </div> -->
-    <div class="col-sm" style="padding-top: 8px; height: 40px;">
-
-    </div>
-    <div class="col-sm" style="padding-top: 8px; height: 40px;">
-      <a href="./" style="color:#f55e00">Home</a>
-    </div>
-    <div class="col-sm" style="padding-top: 8px; height: 40px;">
-      <a href="./about.html">About</a>
-    </div>
-    <!-- <div class="col-sm" style="padding-top: 8px; height: 40px;">
-      <a href="./works.html">How it works</a>
-    </div> -->
-    <!-- <div class="col-sm" style="padding-top: 8px; height: 40px;">dd
-      <a href="./give.html">Give</a>
-    </div> -->
-    <div class="col-sm" style="padding-top: 8px; height: 40px;">
-
-    </div>
+<nav class="navbar navbar-expand-sm navbar-dark" style="background-color:#00304B">
+  <a href="" class="navbar-brand">Music Mate</a>
+  <button class="navbar-toggler" data-toggle="collapse" data-target="#navbarMenu">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+  <div class="collapse navbar-collapse" id="navbarMenu">
+    <ul class="navbar-nav">
+      <li class="nav-item">
+        <a href="" class="nav-link">Home</a>
+      </li>
+      <li class="nav-item">
+        <a href="./about.html" class="nav-link">About</a>
+      </li>
+    </ul>
   </div>
-</div>
-
+</nav>
 
 <!-- ===================================== CAROUSEL ===================================== -->
   <!-- <ol class="carousel-indicators">
@@ -116,38 +106,25 @@
   <!-- <div id="carouselExampleIndicators" class="carousel slide" data-ride="carousel"> -->
 
 
-<!-- ===================================== BIG LOGO ===================================== -->
-<div class="px-5 py-3 container-fluid">
-  <div class="row justify-content-center">
-    <div class="col-2">
-
-    </div>
-    <div class="col-8 align-self-center">
-      <img src="mm_logo_long.png" class="img-fluid" height=200 alt="Responsive image">
-    </div>
-    <div class="col-2">
-
+  <!-- ===================================== BIG LOGO ===================================== -->
+  <div class="container-fluid">
+    <div class="row py-5 justify-content-center">
+      <div class="col-md-10 py-5">
+        <img src="mm_logo_long.png" class="img-fluid" alt="Responsive image">
+      </div>
     </div>
   </div>
-</div>
-
-
-<!-- ===================================== LANDING DESCRIPTION ===================================== -->
-<div class="container-fluid text-white" style="background-color: #f55e00">
-  <div class="row-4">
-    <div class="col-3">
-      <h1>test</h1>
-    </div>
-    <div class="col-6 justify-content-between align-self-center">
-        <h1 class="font-weight-bold">Changing the way you play.</h1>
-        <h5>Music Mate eliminates prep time for leading music.</h5>
-    </div>
-    <div class="col-3 justify-content-between">
-      <h1>test</h1>
+  
+  <!-- ===================================== LANDING DESCRIPTION ===================================== -->
+  <div class="container-fluid py-5 text-white" style="background-color: #f55e00">
+    <div class="row py-5 justify-content-center text-center">
+      <div class="col-md-12 py-5">
+          <h1 class="font-weight-bold" style="font-size: 50px">Changing the way you play.</h1>
+          <h4>Music Mate eliminates prep time to lead music.</h5>
+      </div>
     </div>
   </div>
-</div>
-
+  
 <!-- ===================================== INSTRUCTIONS (Copy. Paste. Play.)===================================== -->
 <div class="p-3 mb-0 bg-quick text-white" style="padding-left: 20 px; padding-right: 20 px">
   <div class="row">
@@ -263,7 +240,7 @@
 
 <!-- ===================================== DOWNLOAD BUTTONS ===================================== -->
 <div class="row">
-  <!-- LYRIC SLIDESOW BUTTON -->
+  <!-- LYRIC SLIDESHOW BUTTON -->
   <div class="col-sm">
     <form class="col text-center">
       <button id="slidesProgress" type="button" class="btn btn-sample btn-lg" onclick="slides()">Lyric Slideshow</button> <br>
