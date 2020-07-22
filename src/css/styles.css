@@ -1,36 +1,21 @@
-/* NAV BAR */
-div.container-fluid div.row div.col-sm a {
-  color: white;
-}
-div.container-fluid div.row div.col-sm a:link {
-  color: white;
-  text-decoration: none;
-}
-div.container-fluid div.row div.col-sm a:visited {
-  color: white;
-  text-decoration: none;
-}
-div.container-fluid div.row div.col-sm a:hover {
-  color: #f55e00;
-  text-decoration: none;
-}
-div.container-fluid div.row div.col-sm a:active {
-  color: #f55e00;
-  text-decoration: none;
-}
+/* ===== CUSTOM BOOTSTRAP ===== */
 
-/* CAROUSEL */
+/* ===== CUSTOM BOOTSTRAP ===== */
 
-.carousel-inner {
-  width: 100%;
-  max-height: 200px !important;
+/* TEXT COLOR */
+.text-blue {
+  color: #00304B;
 }
-
-/* CUSTOM BOOTSTRAP */
+.text-orange {
+  color: #F55E00;
+}
 
 /* CONTAINER BACKGROUND */
-.bg-quick {
+.bg-blue {
   background-color: #00304B;
+}
+.bg-orange {
+  background-color: #F55E00;
 }
 
 /* CARD BORDER */
