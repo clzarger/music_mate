@@ -1,18 +1,18 @@
-// ===================================== NODE PACKAGES =====================================
+// ===== NODE PACKAGES =====
 const temp = require('./temp');
 const PDFDocument = require('pdfkit');
 const blobStream = require('blob-stream');
 const axios = require('axios');
 
-// ===================================== TITLE CASE FUNCTION =====================================
+// ===== TITLE CASE FUNCTION =====
 function toTitleCase(str) {
   return str.replace(/\w\S*/g, function(txt){
       return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
   });
 };
 
-// ===================================== PICK LINES FUNCTION ===================================== for lyric slideshow (ppt)
-window.maxLinesPerSlide = 4; // set default maxLinesPerSlide to 4
+// ===== PICK LINES FUNCTION ===== for lyric slideshow (ppt)
+window.maxLinesPerSlide = 4; // set default maxLinesPerSlide
 window.pickLines = function(maxLinesInput) {
   // update dropdown name based on user selection
   document.getElementById("dropdownMenuPickLines").innerHTML = "Max lines per slide: " + document.getElementById(maxLinesInput).innerHTML;
@@ -20,17 +20,17 @@ window.pickLines = function(maxLinesInput) {
   window.maxLinesPerSlide = maxLinesInput;
 };
 
-// ===================================== PICK FONT FUNCTION ===================================== for lyric slideshow (ppt)
-window.fontSize = 28; // set default fontSize to 28
-window.pickFont = function(fontSizeInput) {
+// ===== PICK FONT FUNCTION ===== for lyric slideshow (ppt)
+window.fontSizeSlideshow = 28; // set default font size
+window.pickFontSlideshow = function(fontSizeSlideshowInput) {
   // update dropdown name based on user selection
-  document.getElementById("dropdownMenuPickFont").innerHTML = "Font size: " + document.getElementById(fontSizeInput).innerHTML;
+  document.getElementById("dropdownMenuPickFontSlideshow").innerHTML = "Font size: " + document.getElementById(fontSizeSlideshowInput).innerHTML;
   // update global variable for usage in main functions
-  window.fontSize = fontSizeInput;
+  window.fontSizeSlideshow = fontSizeSlideshowInput;
 };
 
-// ===================================== PICK COLUMNS FUNCTION ===================================== for musician chords (pdf)
-window.numberOfColumns = 1; // set default number of columns to 1
+// ===== PICK COLUMNS FUNCTION ===== for musician chords (pdf)
+window.numberOfColumns = 2; // set default number of columns
 window.pickColumns = function(numberOfColumnsInput) {
   // update dropdown name based on user selection
   document.getElementById("dropdownMenuPickColumns").innerHTML = "Number of columns: " + document.getElementById(numberOfColumnsInput).innerHTML;
@@ -38,8 +38,8 @@ window.pickColumns = function(numberOfColumnsInput) {
   window.numberOfColumns = numberOfColumnsInput;
 };
 
-// ===================================== PICK LAYOUT FUNCTION ===================================== for musician chords (pdf)
-window.pageLayout = 'landscape'; // set default page layout to landscape
+// ===== PICK LAYOUT FUNCTION ===== for musician chords (pdf)
+window.pageLayout = 'landscape'; // set default page layout
 window.pickLayout= function(pageLayoutInput) {
   // update dropdown name based on user selection
   document.getElementById("dropdownMenuPickLayout").innerHTML = "Page layout: " + document.getElementById(pageLayoutInput).innerHTML;
@@ -47,11 +47,18 @@ window.pickLayout= function(pageLayoutInput) {
   window.pageLayout = pageLayoutInput;
 };
 
+// ===== PICK FONT FUNCTION ===== for musician chords (pdf)
+window.fontSizeChords = 12; // set default font size
+window.pickFontChords= function(fontSizeChordsInput) {
+  // update dropdown name based on user selection
+  document.getElementById("dropdownMenuPickFontChords").innerHTML = "Font size: " + document.getElementById(fontSizeChordsInput).innerHTML;
+  // update global variable for usage in main functions
+  window.fontSizeChords = fontSizeChordsInput;
+};
 
-
-// =================================================================================================
-// ===================================== LYRIC SLIDESHOW (PPT) =====================================
-// =================================================================================================
+// =================================
+// ===== LYRIC SLIDESHOW (PPT) =====
+// =================================
 function reformatSlides(pptx, songName, songArtist, songLyrics, maxLinesPerSlide) {
   // Reformat input with REGEX (potentially helpful regex:\n.*\n.*\n.*$)
     // remove chords (when I used ugs, just needed this and skipped the next two regex expressions)
@@ -179,7 +186,7 @@ function reformatSlides(pptx, songName, songArtist, songLyrics, maxLinesPerSlide
         // the length of slideArr is the # of slides. minus 1 b/c I have a -1 in the 0th slot
         for (let i = 0; i < slideArr.length - 1; i++){
           var pptxLyricSlides = pptx.addNewSlide({ bkgd: '000000' });
-          pptxLyricSlides.addText(slideArr[i+1], {x: 0.25, y: '3%', w:'95%', font_size: fontSize, font_face: 'Helvetica', color: 'ffffff', align: 'center', valign: 'top'});
+          pptxLyricSlides.addText(slideArr[i+1], {x: 0.25, y: '3%', w:'95%', font_size: fontSizeSlideshow, font_face: 'Helvetica', color: 'ffffff', align: 'center', valign: 'top'});
         };
       };
   // ===== end of reformatSlides function =====
@@ -193,7 +200,7 @@ window.slides = function () {
   var titleArr = [];
   var artistArr = [];
   var lyricsArr = [];
-  // get inputs from HTML side
+  // get inputs from HTML side, put into arrays
   for (let i = 0; i < numberOfSongs; i++){
     titleArr[i] = toTitleCase(document.getElementById("title"+i).value);
     artistArr[i] = toTitleCase(document.getElementById("artist"+i).value);
@@ -245,9 +252,9 @@ window.slides = function () {
   };
 
 
-// =================================================================================================
-// ===================================== LYRIC HANDOUT (PDF) =======================================
-// =================================================================================================
+// ===============================
+// ===== LYRIC HANDOUT (PDF) =====
+// ===============================
 function reformatHandout(doc, songName, songArtist, songLyrics){
   // Reformat input with REGEX (potentially helpful regex:\n.*\n.*\n.*$)
     // remove chords (when I used ugs, just needed this and skipped the next two regex expressions)
@@ -307,7 +314,7 @@ function reformatHandout(doc, songName, songArtist, songLyrics){
     };
       doc.moveDown();
       // ===== end of reformatHandout function =====
-      // ==========================================
+      // ==========
   };
 window.handout = function () {
   // update button to give user feedback
@@ -317,7 +324,7 @@ window.handout = function () {
   var titleArr = [];
   var artistArr = [];
   var lyricsArr = [];
-  // get inputs from HTML side
+  // get inputs from HTML side, put into arrays
   for (let i = 0; i < numberOfSongs; i++){
     titleArr[i] = toTitleCase(document.getElementById("title"+i).value);
     artistArr[i] = toTitleCase(document.getElementById("artist"+i).value);
@@ -394,9 +401,9 @@ window.handout = function () {
 };
 
 
-// =================================================================================================
-// ===================================== MUSICIAN CHORDS (PDF) =====================================
-// =================================================================================================
+// =================================
+// ===== MUSICIAN CHORDS (PDF) =====
+// =================================
 function reformatChords(doc, songName, songArtist, songLyrics){
   // Reformat input with REGEX
     // var songLyrics ="Cornerstone by Hillsong\n\n[Intro]\n\n[ch]C[\/ch]   [ch]Am[\/ch]   [ch]F[\/ch]  [ch]G[\/ch]\n\n\n[Verse 1]\n\n[ch]C[\/ch]\nMy hope is built on nothing less\n[ch]F[\/ch]                     [ch]G[\/ch]\nThan Jesus\' blood and righteousness\n[ch]Am[\/ch]"
@@ -424,99 +431,34 @@ function reformatChords(doc, songName, songArtist, songLyrics){
   var songLyrics_SplitByNewline_Arr = songLyrics_regex_complete.split(/\n/g);
 
 
-    // WORKING HERE =====
-  // function chunkArray(myArray, chunk_size){
-  //   var index = 0;
-  //   var arrayLength = myArray.length;
-  //   var tempArray = [];
-  //   for (index = 0; index < arrayLength; index += chunk_size) {
-  //     // if (/\b([CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m|add)*[\d\/]*(?:[CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m|add)*[\d\/]*)*)(?=\s|$)(?!\w)|\[/gm.test(songLyrics_SplitByNewline_Arr)) {
-  //       var myChunk = myArray.slice(index, index + chunk_size);
-  //     // };
-  //     // Do something if you want with the group
-  //     tempArray.push(myChunk);
-  //   };
-  //   return tempArray;
-  // };
-
-  // // chunk into groups that are equal to the number of lines per slide
-  // var chunkedArrayNew = chunkArray(songLyrics_SplitByNewline_Arr, 1);
-  // // array to string function
-  // function arrayToString(array) {
-  //   var string = "";
-  //   for (let j = 0; j < array.length; j++){
-  //     var string = string + array[j] + '\n';
-  //   };
-  //   return string = string.slice(0, -1);
-  // };
-  // // convert arrays (so they can properly be added to the master slides aka slideArr)
-  // // if you don't do this, it adds the array as a single element, which breaks things
-  // var chunkedStringNew = [];
-  // for (let k = 0; k < chunkedArrayNew.length; k++){
-  //   chunkedStringNew[k] = arrayToString(chunkedArrayNew[k]);
-  // };
-  // // at current index, remove 0 elements, then add the text to that position
-  // for (let l = 0; l < chunkedStringNew.length; l++){
-  //   songLyrics_SplitByNewline_Arr.splice(i+1+l, 0, chunkedStringNew[l]);
-  // };
-  // // skip ahead of the two split slides I just inserted & remove the old combined one
-  // songLyrics_SplitByNewline_Arr.splice(i+1+chunkedStringNew.length, 1);
-  // debugger;
-
-  // var songLyrics_PairedLines_Arr = [];
-  // // split songLyrics_SplitByNewline_Arr into a new array that combines array elements
-  // // that have both chords & lyrics 
-  // for (let i = 0; i < songLyrics_SplitByNewline_Arr.length; i++){
-  //   if (/\b([CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m|add)*[\d\/]*(?:[CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m|add)*[\d\/]*)*)(?=\s|$)(?!\w)|\[/gm.test(songLyrics_SplitByNewline_Arr[i])) {
-  //     var slicedOutTwoLines = songLyrics_SplitByNewline_Arr.slice(i, i + 2);
-  //     songLyrics_PairedLines_Arr = songLyrics_PairedLines_Arr.push(slicedOutTwoLines);
-  //   } else {
-  //     songLyrics_PairedLines_Arr = songLyrics_PairedLines_Arr.push(songLyrics_SplitByNewline_Arr[i]);
-  //   };
-  // };
-
-  // console.log(songLyrics_PairedLines_Arr);
-
-  // then loop through the array & chunk too long ones into smaller bits (as I do in other code)
-    // for (let i = 0; i < songLyrics_SplitByNewline_Arr.length; i++){
-    //   var test = doc.widthOfString(songLyrics_SplitByNewline_Arr[i]);
-    //   console.log(test);
-    // };
-
-    //THE CONCEPT:
-    // split it up into an array that has chords tied with text, aka 2 lines per element
-    // identify width of string, then split long lines into 2 elements if above a threshold
-    // THEN do the normal split so that it can insert things in bold
-
-    //THE ISSUE:
-    // I can't take advantage of the built in 2 column functionality because you have to
-    // insert all of the text at once so the package can tell when to wrap to 2 columns.
-    // If I feed my text in this way, I won't be able to bold some lines
-
-    //SOLUTION?
-    // Build it into one doc, then put all of the sorted text from that one into another one?
-
-    // END WORKING HERE
-
-  // debugger;
-
-  // Create pages
-  doc.addPage({
-    // this seems to only affect the first page inserted
-    layout: pageLayout,
-    margin: 20, 
-  });
+    // create pages
+    doc.addPage({
+      // this seems to only affect the first page inserted
+      layout: pageLayout,
+      margin: 1, 
+    });
+    // insert title & artist information
     doc.font('Courier-Bold');
-    doc.fontSize(13);
+    doc.fontSize(fontSizeChords + 1);
     doc.text(songName + " - " + songArtist, {
       columns: numberOfColumns,
     });
-      doc.moveDown();
-      doc.fontSize(12);
+    // insert lyric information
+    doc.moveDown();
+    doc.fontSize(fontSizeChords);
+    doc.font('Courier');
+    // if only 1 column is requested, run code that does bolding properly
+    if (numberOfColumns == 1) {
       // loop through the array of input text and bold lines with chords & brackets "["
       for (let i = 0; i < songLyrics_SplitByNewline_Arr.length; i++){
+        // if the line of text starts with the letter A, do not count it as a chord by accident
+        if (/A /gm.test(songLyrics_SplitByNewline_Arr[i])) {
+          doc.font('Courier');
+          doc.text(songLyrics_SplitByNewline_Arr[i], {
+            columns: numberOfColumns,
+          });
         // identifies all chords & lines with brackets "[" & makes them bold
-        if (/\b([CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m|add)*[\d\/]*(?:[CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m|add)*[\d\/]*)*)(?=\s|$)(?!\w)|\[/gm.test(songLyrics_SplitByNewline_Arr[i])) {
+        } else if (/\b([CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m|add)*[\d\/]*(?:[CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m|add)*[\d\/]*)*)(?=\s|$)(?!\w)|\[/gm.test(songLyrics_SplitByNewline_Arr[i])) {
           doc.font('Courier-Bold');
           doc.text(songLyrics_SplitByNewline_Arr[i], {
             columns: numberOfColumns,
@@ -529,7 +471,13 @@ function reformatChords(doc, songName, songArtist, songLyrics){
           });
         };
       };
-        
+    // if 2 columns is requested, bolding code doesn't work, use simpler code 
+    } else {
+    // Create pages
+    doc.text(songLyrics_regex_complete, {
+      columns: numberOfColumns,
+    });
+    };  
   // ===== end of reformatChords function =====
   // ==========================================
 };
@@ -541,7 +489,7 @@ window.chords = function () {
   var titleArr = [];
   var artistArr = [];
   var lyricsArr = [];
-  // get inputs from HTML side
+  // get inputs from HTML side, put into arrays
   for (let i = 0; i < numberOfSongs; i++){
     titleArr[i] = toTitleCase(document.getElementById("title"+i).value);
     artistArr[i] = toTitleCase(document.getElementById("artist"+i).value);
@@ -584,13 +532,13 @@ window.chords = function () {
   // change blank PDF document to a blob stream (add content after this call)
   window.stream = doc.pipe(blobStream());
 
-  // reformat each input using reformatChords
+  // reformat each input using reformatChords (loop through arrays containing the inputs)
   for (let i = 0; i < numberOfSongs; i++){
     reformatChords(doc, titleArr[i], artistArr[i], lyricsArr[i]);
   };
   // save document
   doc.end();
-
+debugger;
   // pick filename (if only one song is input along with a title & artist, change filename to be the name of that song)
   if (numberOfSongs == 1 && titleArr[0] !== "Title" && artistArr[0] !== "Artist") {
     var filename = ('Musician Chords ' + '(' + titleArr[0] + ' - ' + artistArr[0] + ')');
@@ -617,9 +565,9 @@ window.chords = function () {
 };
 
 
-// =================================================================================================
-// ===================================== LYRICS ON PAPER (DOC) TEST???? ============================
-// =================================================================================================
+// =================================
+// ===== LYRICS ON PAPER (DOC) TEST???? ============================
+// =================================
 window.doc = function () {
   var docx = require('docx');
   var doc = new docx.Document();

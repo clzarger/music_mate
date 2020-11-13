@@ -1,8 +1,89 @@
+// === MUSICIAN CHORDS (PDF) code ===
+// NOTES
+// I was trying to get pdfkit to be able to insert text that would be able to have chords come in bold
+// This code was sitting right before:
+      // Create pages
+      doc.addPage({
+
+// CODE =====
+  // function chunkArray(myArray, chunk_size){
+  //   var index = 0;
+  //   var arrayLength = myArray.length;
+  //   var tempArray = [];
+  //   for (index = 0; index < arrayLength; index += chunk_size) {
+  //     // if (/\b([CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m|add)*[\d\/]*(?:[CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m|add)*[\d\/]*)*)(?=\s|$)(?!\w)|\[/gm.test(songLyrics_SplitByNewline_Arr)) {
+  //       var myChunk = myArray.slice(index, index + chunk_size);
+  //     // };
+  //     // Do something if you want with the group
+  //     tempArray.push(myChunk);
+  //   };
+  //   return tempArray;
+  // };
+
+  // // chunk into groups that are equal to the number of lines per slide
+  // var chunkedArrayNew = chunkArray(songLyrics_SplitByNewline_Arr, 1);
+  // // array to string function
+  // function arrayToString(array) {
+  //   var string = "";
+  //   for (let j = 0; j < array.length; j++){
+  //     var string = string + array[j] + '\n';
+  //   };
+  //   return string = string.slice(0, -1);
+  // };
+  // // convert arrays (so they can properly be added to the master slides aka slideArr)
+  // // if you don't do this, it adds the array as a single element, which breaks things
+  // var chunkedStringNew = [];
+  // for (let k = 0; k < chunkedArrayNew.length; k++){
+  //   chunkedStringNew[k] = arrayToString(chunkedArrayNew[k]);
+  // };
+  // // at current index, remove 0 elements, then add the text to that position
+  // for (let l = 0; l < chunkedStringNew.length; l++){
+  //   songLyrics_SplitByNewline_Arr.splice(i+1+l, 0, chunkedStringNew[l]);
+  // };
+  // // skip ahead of the two split slides I just inserted & remove the old combined one
+  // songLyrics_SplitByNewline_Arr.splice(i+1+chunkedStringNew.length, 1);
+  // debugger;
+
+  // var songLyrics_PairedLines_Arr = [];
+  // // split songLyrics_SplitByNewline_Arr into a new array that combines array elements
+  // // that have both chords & lyrics 
+  // for (let i = 0; i < songLyrics_SplitByNewline_Arr.length; i++){
+  //   if (/\b([CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m|add)*[\d\/]*(?:[CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m|add)*[\d\/]*)*)(?=\s|$)(?!\w)|\[/gm.test(songLyrics_SplitByNewline_Arr[i])) {
+  //     var slicedOutTwoLines = songLyrics_SplitByNewline_Arr.slice(i, i + 2);
+  //     songLyrics_PairedLines_Arr = songLyrics_PairedLines_Arr.push(slicedOutTwoLines);
+  //   } else {
+  //     songLyrics_PairedLines_Arr = songLyrics_PairedLines_Arr.push(songLyrics_SplitByNewline_Arr[i]);
+  //   };
+  // };
+
+  // console.log(songLyrics_PairedLines_Arr);
+
+  // then loop through the array & chunk too long ones into smaller bits (as I do in other code)
+    // for (let i = 0; i < songLyrics_SplitByNewline_Arr.length; i++){
+    //   var test = doc.widthOfString(songLyrics_SplitByNewline_Arr[i]);
+    //   console.log(test);
+    // };
+
+    //THE CONCEPT:
+    // split it up into an array that has chords tied with text, aka 2 lines per element
+    // identify width of string, then split long lines into 2 elements if above a threshold
+    // THEN do the normal split so that it can insert things in bold
+
+    //THE ISSUE:
+    // I can't take advantage of the built in 2 column functionality because you have to
+    // insert all of the text at once so the package can tell when to wrap to 2 columns.
+    // If I feed my text in this way, I won't be able to bold some lines
+
+    //SOLUTION?
+    // Build it into one doc, then put all of the sorted text from that one into another one?
+
+    // END WORKING HERE
+
+  // debugger;
 
 
 
-
-// ===================================== CSS code of what buttons used to look like =====================================
+// ===== CSS code of what buttons used to look like =====
 // I took lines out that I found to be unnecessary
 /* Button Sample */
 .btn-sample {
@@ -53,7 +134,7 @@ fieldset[disabled] .btn-sample.active {
 
 
 
-// ===================================== GET INPUTS FUNCTION =====================================
+// ===== GET INPUTS FUNCTION =====
 function getInputs(numberOfSongs, titleArr, artistArr, lyricsArr) {
   // read in all title, artist, and lyric inputs from HTML side & make title case
   for (let i = 1; i < numberOfSongs+1; i++){
@@ -74,7 +155,7 @@ function getInputs(numberOfSongs, titleArr, artistArr, lyricsArr) {
 };
 
 
-// ===================================== TEST FUNCTION for array =====================================
+// ===== TEST FUNCTION for array =====
 window.test = function () {
     var songLyrics_v8 = 'HEY THIS [1] text for the first slide [2] second slide [3] third one [4] fourth one [5] fifth';
 
@@ -262,7 +343,7 @@ if (isNaN('Title')) {
 
 
 
-// ===================================== GET SONG DATA FROM SERVER =====================================
+// ===== GET SONG DATA FROM SERVER =====
 // was in header of root.js just under node packages
 // function getSong(songName, songArtist){
 //   return axios.get('https://eg5n058gdb.execute-api.us-east-1.amazonaws.com/dev/getSong?name=' + songName + '&artist=' + songArtist)
@@ -272,9 +353,9 @@ if (isNaN('Title')) {
 // };
 
 
-// =====================================================================
+// =====================================
 // ========== Array manipulation to split slides in to chunks ==========
-// =====================================================================
+// =====================================
 
 // ===== example =====
 // Array: [line 1, line 2, line 3, line 4, line 5, line 6]
@@ -355,7 +436,7 @@ var last3lines = oneSlide_SplitByNewline_Arr[3] + '\n' + oneSlide_SplitByNewline
 
 
 
-    // ===================================== CODE VAULT =====================================
+    // ===== CODE VAULT =====
       // How it used to be done
       //     //SONG ONE!!!!!!!!!!!!
       //       //remove chords
@@ -867,9 +948,9 @@ var last3lines = oneSlide_SplitByNewline_Arr[3] + '\n' + oneSlide_SplitByNewline
 
 
 
-      // =================================================================================================
-      // ===================================== LYRICS ON PAPER (DOC) TEST???? ============================
-      // =================================================================================================
+      // =================================
+      // ===== LYRICS ON PAPER (DOC) TEST???? ============================
+      // =================================
       window.test = function () {
         var filename = 'Lyrics on Paper';
         // inputs

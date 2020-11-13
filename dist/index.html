@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 
-<!-- ================================================================================== -->
-<!-- ===================================== HEADER ===================================== -->
-<!-- ================================================================================== -->
+<!-- ==================== -->
+<!-- ====== HEADER ====== -->
+<!-- ==================== -->
 <head>
-<!-- ===================================== GOOGLE ANALYTICS ===================================== -->
+<!-- ===== GOOGLE ANALYTICS ===== -->
 <!-- Global site tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=UA-111458542-1"></script>
   <script>
@@ -15,10 +15,10 @@
     gtag('config', 'UA-111458542-1');
   </script>
 
-  <!-- ===================================== PPTX STARTER SCRIPT? ===================================== -->
+  <!-- ===== PPTX STARTER SCRIPT? ===== -->
   <script lang="javascript" src="./pptxgen.bundle.js"></script>
 
-  <!-- ===================================== MAIN HEADER ===================================== -->
+  <!-- ===== MAIN HEADER ===== -->
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
   <title>Music Mate</title>
@@ -27,7 +27,7 @@
   <link rel="icon" href="/mm_favicon.png" type="image/png" />
 
 
-  <!-- ===================================== FIREBASE ===================================== -->
+  <!--  ===== FIREBASE ===== -->
   <script src="https://www.gstatic.com/firebasejs/4.7.0/firebase.js"></script>
   <script>
     // Initialize Firebase
@@ -42,210 +42,225 @@
     firebase.initializeApp(config);
   </script>
 
-  <!-- ===================================== CDN LINKS ===================================== -->
+  <!--  ===== CDN LINKS ===== -->
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
   <link rel="stylesheet" href="./styles.css">
 
 </head>
 
-<!-- ================================================================================== -->
-<!-- ===================================== BODY ======================================= -->
-<!-- ================================================================================== -->
+<!-- ==================== -->
+<!-- ======= BODY ======= -->
+<!-- ==================== -->
 <body>
 
-<!-- ===================================== NAVBAR ===================================== -->
-<nav class="navbar navbar-expand-sm navbar-dark" style="background-color:#00304B">
-  <a href="" class="navbar-brand">Music Mate</a>
-  <button class="navbar-toggler" data-toggle="collapse" data-target="#navbarMenu">
-    <span class="navbar-toggler-icon"></span>
-  </button>
-  <div class="collapse navbar-collapse" id="navbarMenu">
-    <ul class="navbar-nav">
-      <li class="nav-item">
-        <a href="" class="nav-link">Home</a>
-      </li>
-      <li class="nav-item">
-        <a href="./about.html" class="nav-link">About</a>
-      </li>
-    </ul>
-  </div>
-</nav>
+  <!-- ===== NAVBAR ===== -->
+  <nav class="navbar navbar-expand-sm navbar-dark" style="background-color:#00304B">
+    <a href="" class="navbar-brand">Music Mate</a>
+    <button class="navbar-toggler" data-toggle="collapse" data-target="#navbarMenu">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarMenu">
+      <ul class="navbar-nav">
+        <li class="nav-item">
+          <a href="" class="nav-link">Home</a>
+        </li>
+        <li class="nav-item">
+          <a href="./faq.html" class="nav-link">FAQ</a>
+        </li>
+      </ul>
+    </div>
+  </nav>
 
-  <!-- ===================================== BIG LOGO ===================================== -->
+  <!-- ===== BIG LOGO ===== -->
   <div class="container-fluid">
     <div class="row py-5 justify-content-center">
-      <div class="col-md-10 py-5">
+      <div class="col-md-10 col-lg-8 py-5">
         <img src="mm_logo_long.png" class="img-fluid" alt="Responsive image">
       </div>
     </div>
   </div>
   
-  <!-- ===================================== LANDING DESCRIPTION ===================================== -->
-  <div class="container-fluid py-5 text-white" style="background-color: #f55e00">
+  <!-- ===== LANDING DESCRIPTION  ==== -->
+  <div class="container-fluid py-5 text-white" style="background-image: linear-gradient(45deg,#f55e00,#ffa871)">
     <div class="row py-5 justify-content-center text-center">
       <div class="col-md-12 py-5">
           <h1 class="font-weight-bold" style="font-size: 50px">Changing the way you play.</h1>
-          <h4>Music Mate eliminates prep time to lead music.</h5>
+          <h4>Music Mate eliminates prep time to lead music.</h4>
       </div>
     </div>
   </div>
 
-<!-- ===================================== INSTRUCTIONS (Copy. Paste. Play.)===================================== -->
-<div class="p-3 mb-0 bg-blue text-white" style="padding-left: 20 px; padding-right: 20 px">
+  <!-- ===== INSTRUCTIONS (Copy. Paste. Play.) ===== -->
+  <div class="p-3 mb-0 bg-blue text-white" style="padding-left: 20 px; padding-right: 20 px">
+    <div class="row">
+      <div class="col-sm">
+        <div class="card border-0 bg-transparent mb-3" style="width: 50" class="mx-auto">
+          <img class="mx-auto" src="copy.png" alt="Copy graphic">
+          <div class="card-body">
+            <!-- <h1 class="card-title">Copy.</h1> -->
+            <h1 class="font-weight-bold">Copy.</h1>
+            <h5 class="card-text">Go to ultimate-guitar.com to find songs. Copy all lyric headers & guitar chords.</h5>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm">
+        <div class="card border-0 bg-transparent mb-3" style="width: 50" class="mx-auto">
+          <img class="mx-auto" src="paste.png" alt="Paste graphic">
+          <div class="card-body">
+            <!-- <h1 class="card-title">Paste.</h1> -->
+            <h1 class="font-weight-bold">Paste.</h1>
+            <h5 class="card-text">Paste each song below in the reformater.</h5>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm">
+        <div class="card border-0 bg-transparent mb-3" style="width: 50" class="mx-auto">
+        <img class="mx-auto" src="play.png" alt="Play graphic">
+          <div class="card-body">
+            <!-- <h1 class="card-title">Play.</h1> -->
+            <h1 class="font-weight-bold">Play.</h1>
+            <h5 class="card-text">Try all the buttons! Each button puts all the songs in a single file, but applies a different formatting.<h5>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== INPUT TEXT BOXES ===== -->
+  <div class="row border-blue bg-transparent mb-3">
+    <div class="col-sm">
+      <div class="card-body">
+        <h1 class="font-weight-bold">Song 1</h1>
+        <input class="form-control" type="text" id="title0" placeholder="Title"> <br>
+        <input class="form-control" type="text" id="artist0" placeholder="Artist"> <br>
+        <textarea class="form-control" id="lyrics0" name="comments" cols="40" rows="10" placeholder="Lyrics & Chords*" style= "font-size: 15" ></textarea>
+      </div>
+    </div>
+    <div class="col-sm">
+      <div class="card-body">
+        <h1 class="font-weight-bold">Song 2</h1>
+        <input class="form-control" type="text" id="title1" placeholder="Title"> <br>
+        <input class="form-control" type="text" id="artist1" placeholder="Artist"> <br>
+        <textarea class="form-control" id="lyrics1" name="comments" cols="40" rows="10" placeholder="Lyrics & Chords*" style="font-size: 15"></textarea>
+      </div>
+    </div>
+    <div class="col-sm">
+      <div class="card-body">
+        <h1 class="font-weight-bold">Song 3</h1>
+        <input class="form-control" type="text" id="title2" placeholder="Title"> <br>
+        <input class="form-control" type="text" id="artist2" placeholder="Artist"> <br>
+        <textarea class="form-control" id="lyrics2" name="comments" cols="40" rows="10" placeholder="Lyrics & Chords*" style="font-size: 15"></textarea>
+      </div>
+    </div>
+    <div class="col-sm">
+      <div class="card-body">
+        <h1 class="font-weight-bold">Song 4</h1>
+        <input class="form-control" type="text" id="title3" placeholder="Title"> <br>
+        <input class="form-control" type="text" id="artist3" placeholder="Artist"> <br>
+        <textarea class="form-control" id="lyrics3" name="comments" cols="40" rows="10" placeholder="Lyrics & Chords*" style="font-size: 15"></textarea>
+      </div>
+    </div>
+  </div>
+  <!-- horizontal line -->
+  <hr> 
+  <br>
+
+  <!-- ===== DOWNLOAD BUTTONS ===== -->
   <div class="row">
+    <!-- LYRIC SLIDESHOW BUTTON -->
     <div class="col-sm">
-      <div class="card border-0 bg-transparent mb-3" style="width: 50" class="mx-auto">
-        <img class="mx-auto" src="copy.png" alt="Copy graphic">
-        <div class="card-body">
-          <!-- <h1 class="card-title">Copy.</h1> -->
-          <h1 class="font-weight-bold">Copy.</h1>
-          <h5 class="card-text">Go to ultimate-guitar.com to find songs. Copy all lyric headers & guitar chords.</h5>
+      <form class="col text-center">
+        <button id="slidesProgress" type="button" class="btn btn-sample btn-lg" onclick="slides()">Lyric Slideshow</button> <br>
+        <div class="dropdown">
+          <button class="btn btn-secondary dropdown-toggle btn-sm" type="button" id="dropdownMenuPickLines" data-toggle="dropdown" aria-expanded="false">
+            Max lines per slide: 4
+          </button>
+          <div class="dropdown-menu"> 
+            <a class="dropdown-item" style="color:#FFFFFF" onclick="pickLines(2)" id="2">2</a>
+            <a class="dropdown-item" style="color:#FFFFFF" onclick="pickLines(3)" id="3">3</a>
+            <a class="dropdown-item" style="color:#FFFFFF" onclick="pickLines(4)" id="4">4</a>
+            <a class="dropdown-item" style="color:#FFFFFF" onclick="pickLines(5)" id="5">5</a>
+            <a class="dropdown-item" style="color:#FFFFFF" onclick="pickLines(6)" id="6">6</a>
+          </div>
         </div>
-      </div>
+        <div class="dropdown">
+          <button class="btn btn-secondary dropdown-toggle btn-sm" type="button" id="dropdownMenuPickFontSlideshow data-toggle="dropdown" aria-expanded="false">
+            Font size: 28
+          </button>
+          <div class="dropdown-menu"> 
+            <a class="dropdown-item" style="color:#FFFFFF" onclick="pickFontSlideshow(20)" id="20">20</a>
+            <a class="dropdown-item" style="color:#FFFFFF" onclick="pickFontSlideshow(24)" id="24">24</a>
+            <a class="dropdown-item" style="color:#FFFFFF" onclick="pickFontSlideshow(28)" id="28">28</a>
+            <a class="dropdown-item" style="color:#FFFFFF" onclick="pickFontSlideshow(32)" id="32">32</a>
+            <a class="dropdown-item" style="color:#FFFFFF" onclick="pickFontSlideshow(36)" id="36">36</a>
+          </div>
+        </div>
+        <div style="font-size: 11px; color:rgb(149, 155, 158)">
+          ppt doesn't download on mobile
+        </div>
+      </form>
     </div>
+    <!-- LYRIC HANDOUT BUTTON -->
     <div class="col-sm">
-      <div class="card border-0 bg-transparent mb-3" style="width: 50" class="mx-auto">
-        <img class="mx-auto" src="paste.png" alt="Paste graphic">
-        <div class="card-body">
-          <!-- <h1 class="card-title">Paste.</h1> -->
-          <h1 class="font-weight-bold">Paste.</h1>
-          <h5 class="card-text">Paste each song below in the reformater.</h5>
-        </div>
-      </div>
+      <form class="col text-center">
+        <button id="handoutProgress" type="button" class="btn btn-sample btn-lg" onclick="handout()">Lyric Handout</button>
+      </form>
     </div>
+    <!-- MUSICIAN CHORDS BUTTON -->
     <div class="col-sm">
-      <div class="card border-0 bg-transparent mb-3" style="width: 50" class="mx-auto">
-      <img class="mx-auto" src="play.png" alt="Play graphic">
-        <div class="card-body">
-          <!-- <h1 class="card-title">Play.</h1> -->
-          <h1 class="font-weight-bold">Play.</h1>
-          <h5 class="card-text">Try all the buttons! Each button puts all the songs in a single file, but applies a different formatting.<h5>
+      <form class="col text-center">
+        <button id="chordsProgress" type="button" class="btn btn-sample btn-lg" onclick="chords()">Musician Chords</button>
+        <div class="dropdown">
+          <button class="btn btn-secondary dropdown-toggle btn-sm" type="button" id="dropdownMenuPickColumns" data-toggle="dropdown" aria-expanded="false">
+            Number of columns: 2
+          </button>
+          <div class="dropdown-menu"> 
+            <a class="dropdown-item" style="color:#FFFFFF" onclick="pickColumns(1)" id="1">1</a>
+            <a class="dropdown-item" style="color:#FFFFFF" onclick="pickColumns(2)" id="2">2</a>
+          </div>
         </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ===================================== INPUT TEXT BOXES ===================================== -->
-<div class="row border-blue bg-transparent mb-3">
-  <div class="col-sm">
-    <div class="card-body">
-      <h1 class="font-weight-bold">Song 1</h1>
-	  	<input class="form-control" type="text" id="title0" placeholder="Title"> <br>
-      <input class="form-control" type="text" id="artist0" placeholder="Artist"> <br>
-	  	<textarea class="form-control" id="lyrics0" name="comments" cols="40" rows="10" placeholder="Lyrics & Chords*" style= "font-size: 15" ></textarea>
-    </div>
-  </div>
-  <div class="col-sm">
-    <div class="card-body">
-      <h1 class="font-weight-bold">Song 2</h1>
-  		<input class="form-control" type="text" id="title1" placeholder="Title"> <br>
-      <input class="form-control" type="text" id="artist1" placeholder="Artist"> <br>
-  		<textarea class="form-control" id="lyrics1" name="comments" cols="40" rows="10" placeholder="Lyrics & Chords*" style="font-size: 15"></textarea>
-    </div>
-  </div>
-  <div class="col-sm">
-    <div class="card-body">
-      <h1 class="font-weight-bold">Song 3</h1>
-  		<input class="form-control" type="text" id="title2" placeholder="Title"> <br>
-      <input class="form-control" type="text" id="artist2" placeholder="Artist"> <br>
-  		<textarea class="form-control" id="lyrics2" name="comments" cols="40" rows="10" placeholder="Lyrics & Chords*" style="font-size: 15"></textarea>
-    </div>
-  </div>
-  <div class="col-sm">
-    <div class="card-body">
-      <h1 class="font-weight-bold">Song 4</h1>
-      <input class="form-control" type="text" id="title3" placeholder="Title"> <br>
-      <input class="form-control" type="text" id="artist3" placeholder="Artist"> <br>
-      <textarea class="form-control" id="lyrics3" name="comments" cols="40" rows="10" placeholder="Lyrics & Chords*" style="font-size: 15"></textarea>
-    </div>
-  </div>
-</div>
-<!-- horizontal line -->
-<hr> 
-<br>
-
-<!-- ===================================== DOWNLOAD BUTTONS ===================================== -->
-<div class="row">
-  <!-- LYRIC SLIDESHOW BUTTON -->
-  <div class="col-sm">
-    <form class="col text-center">
-      <button id="slidesProgress" type="button" class="btn btn-sample btn-lg" onclick="slides()">Lyric Slideshow</button> <br>
-      <div class="dropdown">
-        <button class="btn btn-secondary dropdown-toggle btn-sm" type="button" id="dropdownMenuPickLines" data-toggle="dropdown" aria-expanded="false">
-          Max lines per slide: 4
-        </button>
-        <div class="dropdown-menu"> 
-          <a class="dropdown-item" style="color:#FFFFFF" onclick="pickLines(2)" id="2">2</a>
-          <a class="dropdown-item" style="color:#FFFFFF" onclick="pickLines(3)" id="3">3</a>
-          <a class="dropdown-item" style="color:#FFFFFF" onclick="pickLines(4)" id="4">4</a>
-          <a class="dropdown-item" style="color:#FFFFFF" onclick="pickLines(5)" id="5">5</a>
-          <a class="dropdown-item" style="color:#FFFFFF" onclick="pickLines(6)" id="6">6</a>
+        <div class="dropdown">
+          <button class="btn btn-secondary dropdown-toggle btn-sm" type="button" id="dropdownMenuPickLayout" data-toggle="dropdown" aria-expanded="false">
+            Page layout: horizontal
+          </button>
+          <div class="dropdown-menu"> 
+            <a class="dropdown-item" style="color:#FFFFFF" onclick="pickLayout('landscape')" id="landscape">horizontal</a>
+            <a class="dropdown-item" style="color:#FFFFFF" onclick="pickLayout('portrait')" id="portrait">vertical</a>
+          </div>
         </div>
-      </div>
-      <div class="dropdown">
-        <button class="btn btn-secondary dropdown-toggle btn-sm" type="button" id="dropdownMenuPickFont" data-toggle="dropdown" aria-expanded="false">
-          Font size: 28
-        </button>
-        <div class="dropdown-menu"> 
-          <a class="dropdown-item" style="color:#FFFFFF" onclick="pickFont(20)" id="20">20</a>
-          <a class="dropdown-item" style="color:#FFFFFF" onclick="pickFont(24)" id="24">24</a>
-          <a class="dropdown-item" style="color:#FFFFFF" onclick="pickFont(28)" id="28">28</a>
-          <a class="dropdown-item" style="color:#FFFFFF" onclick="pickFont(32)" id="32">32</a>
-          <a class="dropdown-item" style="color:#FFFFFF" onclick="pickFont(36)" id="36">36</a>
+        <div class="dropdown">
+          <button class="btn btn-secondary dropdown-toggle btn-sm" type="button" id="dropdownMenuPickFontChords" data-toggle="dropdown" aria-expanded="false">
+            Font size: 12
+          </button>
+          <div class="dropdown-menu"> 
+            <a class="dropdown-item" style="color:#FFFFFF" onclick="pickFontChords(8)" id="8">8</a>
+            <a class="dropdown-item" style="color:#FFFFFF" onclick="pickFontChords(10)" id="10">10</a>
+            <a class="dropdown-item" style="color:#FFFFFF" onclick="pickFontChords(12)" id="12">12</a>
+            <a class="dropdown-item" style="color:#FFFFFF" onclick="pickFontChords(14)" id="14">14</a>
+            <a class="dropdown-item" style="color:#FFFFFF" onclick="pickFontChords(16)" id="16">16</a>
+          </div>
         </div>
-      </div>
-      <div style="font-size: 11px; color:rgb(149, 155, 158)">
-        ppt doesn't download on mobile
-      </div>
-    </form>
+      </form>
+    </div>
+    <!-- ADD A TEST BUTTON -->
+    <!-- <div class="col-sm col">
+      <form>
+        <button type="button" class="btn btn-sample btn-lg" onclick="test()">loop</button>
+      </form>
+    </div> -->
   </div>
-  <!-- LYRIC HANDOUT BUTTON -->
-  <div class="col-sm">
-    <form class="col text-center">
-      <button id="handoutProgress" type="button" class="btn btn-sample btn-lg" onclick="handout()">Lyric Handout</button>
-    </form>
-  </div>
-  <!-- MUSICIAN CHORDS BUTTON -->
-  <div class="col-sm">
-    <form class="col text-center">
-      <button id="chordsProgress" type="button" class="btn btn-sample btn-lg" onclick="chords()">Musician Chords</button>
-      <!-- <div class="dropdown">
-        <button class="btn btn-secondary dropdown-toggle btn-sm" type="button" id="dropdownMenuPickColumns" data-toggle="dropdown" aria-expanded="false">
-          Number of columns: 1
-        </button>
-        <div class="dropdown-menu"> 
-          <a class="dropdown-item" style="color:#FFFFFF" onclick="pickColumns(1)" id="1">1</a>
-          <a class="dropdown-item" style="color:#FFFFFF" onclick="pickColumns(2)" id="2">2</a>
-        </div>
-      </div>
-      <div class="dropdown">
-        <button class="btn btn-secondary dropdown-toggle btn-sm" type="button" id="dropdownMenuPickLayout" data-toggle="dropdown" aria-expanded="false">
-          Page layout: horizontal
-        </button>
-        <div class="dropdown-menu"> 
-          <a class="dropdown-item" style="color:#FFFFFF" onclick="pickLayout('landscape')" id="landscape">horizontal</a>
-          <a class="dropdown-item" style="color:#FFFFFF" onclick="pickLayout('portrait')" id="portrait">vertical</a>
-        </div>
-      </div> -->
-    </form>
-  </div>
-  <!-- ADD A TEST BUTTON -->
-  <!-- <div class="col-sm col">
-    <form>
-      <button type="button" class="btn btn-sample btn-lg" onclick="test()">loop</button>
-    </form>
-  </div> -->
-</div>
-<br>
-<br>
-<br>
-<br>
-<!-- NOTE ON INPUTS -->
-<div style="font-size: 12px; color:rgb(149, 155, 158)">
-  <p1>*Your Lyrics and Chords inputs are divided into slides based on brackets, so getting them from Ultimate Guitar is best.</p1>
-<div>
-<!-- ===================================== FOOTER ===================================== -->
+  <br>
+  <br>
+  <br>
+  <br>
+  <!-- NOTE ON INPUTS -->
+  <div style="font-size: 12px; color:rgb(149, 155, 158)">
+    <p1>*Your Lyrics and Chords inputs are divided into slides based on brackets, so getting them from Ultimate Guitar is best.</p1>
+    <p1>On mobile? To copy and paste from ultimate-guitar, you must click on the edit button once you are viewing the song you'd like.</p1>
+  <!-- OTHER NOTES TO ADD: You don't have to fill out all 4 songs or all of the inputs, do as many as you'd like
+  Don't copy tab information -->
+  <div>
+<!-- ===== FOOTER ===== -->
   <footer class="bottom" style="background-color:#00304B">
     <div class="container">
       <span class="col text-center">
@@ -254,10 +269,11 @@
     </div>
   </footer>
 
-<!-- ===================================== ENABLE BOOTSTRAP JAVASCRIPT ===================================== -->
+<!-- ===== ENABLE BOOTSTRAP JAVASCRIPT  ===== -->
 <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js" integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous"></script>
+<script type="text/javascript" src="./bundle.js"></script>
 
 </body>
 </html>

@@ -33,7 +33,7 @@ gulp.task('bundle', () =>
 function copyStatic(cb) {
 	gulp.src([
 		'./src/index.html',
-		'./src/about.html',
+		'./src/faq.html',
 		'./src/works.html',
 		'./src/give.html',
 		'./src/css/styles.css',
