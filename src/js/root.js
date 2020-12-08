@@ -3,6 +3,11 @@ const temp = require('./temp');
 const PDFDocument = require('pdfkit');
 const blobStream = require('blob-stream');
 const axios = require('axios');
+// const docx = require('docx');
+// const fs = require('fs');
+// import * as fs from 'fs';
+// import { Document, Packer, Paragraph, Table, TableCell, TableRow } from 'docx';
+
 
 // ===== TITLE CASE FUNCTION =====
 function toTitleCase(str) {
@@ -63,24 +68,29 @@ function reformatSlides(pptx, songName, songArtist, songLyrics, maxLinesPerSlide
   // Reformat input with REGEX (potentially helpful regex:\n.*\n.*\n.*$)
     // remove chords (when I used ugs, just needed this and skipped the next two regex expressions)
     var songLyrics_v1 = songLyrics.replace(/(\[ch\].*\[*c*h*\])/gm, "");
+        // replace lines of lyrics that start with "A " (ie "A troublesome lyric") with a placeholder so they aren't accidentally removed by the next regex statement
+        // The "remove chords" statement was grabbed from the internet and I don't totally understand it)
+        // var songLyrics_v2 = songLyrics_v1.replace(/A ?/gm, "placeholdertextthatslongandwillalwaysbeunique");
     // remove chords
-    var songLyrics_v2 = songLyrics_v1.replace(/\b([CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m|add)*[\d\/]*(?:[CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m|add)*[\d\/]*)*)(?=\s|$)(?!\w)/gm, "");
+    var songLyrics_v4 = songLyrics_v1.replace(/\b([CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m|add)*[\d\/]*(?:[CDEFGAB](?:b|bb)*(?:#|##|sus|maj|min|aug|m|add)*[\d\/]*)*)(?=\s|$)(?!\w)/gm, "");
+        // change placeholder text back to "A "
+        // var songLyrics_v4 = songLyrics_v3.replace(/placeholdertextthatslongandwillalwaysbeunique/gm, "A ");
     // remove N.C. (no chord)
-    var songLyrics_v3 = songLyrics_v2.replace(/N\.C\./gm,"");
+    var songLyrics_v5 = songLyrics_v4.replace(/N\.C\./gm,"");
     // remove blank lines where chords used to be
-    var songLyrics_v4 = songLyrics_v3.replace(/^\s*[\r\n]*/gm, "");
+    var songLyrics_v6 = songLyrics_v5.replace(/^\s*[\r\n]*/gm, "");
       // remove song intro text
       // var songLyrics_v4 = songLyrics_v3.replace(/".+[\s\S].+.[\s\S].+.[\s\S].+.[\s\S]/gm, "");
       // remove end of song " mark
       // var songLyrics_v5 = songLyrics_v4.replace(/"/gm, "");
     // remove riff tabs (if present)
-    var songLyrics_v6 = songLyrics_v4.replace(/.\|-.*/gm, "");
+    var songLyrics_v7 = songLyrics_v6.replace(/.\|-.*/gm, "");
     // remove [solo] & [instrumental]
-    var songLyrics_v7 = songLyrics_v6.replace(/\[Solo\]|\[solo\]|\[Instrumental\]|\[instrumental\]/gm, "");
+    var songLyrics_v8 = songLyrics_v7.replace(/\[Solo\]|\[solo\]|\[Instrumental\]|\[instrumental\]/gm, "");
     // remove % & |
-    var songLyrics_v8 = songLyrics_v7.replace(/\%*\|*/gm, "");
+    var songLyrics_v9 = songLyrics_v8.replace(/\%*\|*/gm, "");
     // remove extra spaces & blank lines
-    var songLyrics_regex_complete = songLyrics_v8.replace(/\r?\n\s*\n/gm, "\r\n");
+    var songLyrics_regex_complete = songLyrics_v9.replace(/\r?\n\s*\n/gm, "\r\n");
 
     // find number of slides
     var numberOfSlides = (songLyrics_regex_complete.match(/\[/g) || []).length;
@@ -285,14 +295,10 @@ function reformatHandout(doc, songName, songArtist, songLyrics){
   var songLyrics_SplitByNewline_Arr = songLyrics_regex_complete.split(/\n/g);
 
   // Page Creation
-  // doc.addPage({
-  // layout: 'landscape',
-  //   margin: 25,
-  // });
   doc.font('Courier-Bold');
   doc.fontSize(13);
   doc.text(songName + " - " + songArtist, {
-    columns: 1,
+    columns: 1, //this value doesn't seem to matter (I think b/c it's just the header)
   });
     doc.moveDown();
     doc.fontSize(12);
@@ -435,13 +441,14 @@ function reformatChords(doc, songName, songArtist, songLyrics){
     doc.addPage({
       // this seems to only affect the first page inserted
       layout: pageLayout,
-      margin: 1, 
+      margin: 25, 
     });
     // insert title & artist information
     doc.font('Courier-Bold');
     doc.fontSize(fontSizeChords + 1);
     doc.text(songName + " - " + songArtist, {
-      columns: numberOfColumns,
+      columns: numberOfColumns, //this value doesn't seem to matter (I think b/c it's just the header)
+
     });
     // insert lyric information
     doc.moveDown();
@@ -538,7 +545,6 @@ window.chords = function () {
   };
   // save document
   doc.end();
-debugger;
   // pick filename (if only one song is input along with a title & artist, change filename to be the name of that song)
   if (numberOfSongs == 1 && titleArr[0] !== "Title" && artistArr[0] !== "Artist") {
     var filename = ('Musician Chords ' + '(' + titleArr[0] + ' - ' + artistArr[0] + ')');
@@ -566,12 +572,67 @@ debugger;
 
 
 // =================================
-// ===== LYRICS ON PAPER (DOC) TEST???? ============================
+// ===== LYRICS ON PAPER (DOC) TEST???? =====
 // =================================
-window.doc = function () {
-  var docx = require('docx');
-  var doc = new docx.Document();
-  var paragraph = new docx.Paragraph("Some cool text here.");
-  var exporter = new docx.LocalPacker(doc);
-  exporter.pack('My Document');
-      };
+// window.handoutDoc = function () {
+//   var doc = new docx();
+//   doc.addSection({
+//     properties: {},
+//     children: [
+//         new Paragraph({
+//             children: [
+//                 new TextRun("Hello World"),
+//                 new TextRun({
+//                     text: "Foo Bar",
+//                     bold: true,
+//                 }),
+//                 new TextRun({
+//                     text: "\tGithub is the best",
+//                     bold: true,
+//                 }),
+//             ],
+//         }),
+//     ],
+//   });
+// };
+// console.log('hey there! it works');
+// alert('hey there');
+// };
+//   // Create document
+//   const doc = new Document();
+
+//   // Documents contain sections, you can have multiple sections per document, go here to learn more about sections
+//   // This simple example will only contain one section
+//   doc.addSection({
+//       properties: {},
+//       children: [
+//           new Paragraph({
+//               children: [
+//                   new TextRun("Hello World"),
+//                   new TextRun({
+//                       text: "Foo Bar",
+//                       bold: true,
+//                   }),
+//                   new TextRun({
+//                       text: "\tGithub is the best",
+//                       bold: true,
+//                   }),
+//               ],
+//           }),
+//       ],
+//   });
+
+//   // Used to export the file into a .docx file
+//   Packer.toBuffer(doc).then((buffer) => {
+//       fs.writeFileSync("My Document.docx", buffer);
+//   });
+//   // Done! A file called 'My Document.docx' will be in your file system.
+// };
+
+// Old code that was here:
+// var docx = require('docx');
+// var doc = new docx.Document();
+// var paragraph = new docx.Paragraph("Some cool text here.");
+// var exporter = new docx.LocalPacker(doc);
+// exporter.pack('My Document');
+  

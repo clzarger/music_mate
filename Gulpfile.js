@@ -7,7 +7,9 @@ const clean = require('gulp-clean');
 const sequence = require('gulp-sequence');
 const sourcemaps = require('gulp-sourcemaps');
 const runSequence = require('gulp4-run-sequence');
-const fs = require('fs');
+// const fs = require('fs');
+// const docx = require('docx');
+
 
 function defaultTask(cb) {
 	console.log("Default task ran, great work!")
@@ -47,7 +49,9 @@ function copyStatic(cb) {
 		'./src/favicon.png',
 		
 		'./node_modules/pptxgenjs/dist/pptxgen.bundle.js',
-		'./node_modules/express/lib/express.js'
+		'./node_modules/express/lib/express.js',
+		// './node_modules/docx/build/index.js'
+
 	]).pipe(gulp.dest('./dist'));
 
   cb();

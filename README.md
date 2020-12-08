@@ -1,1 +1,1 @@
-# quickchords
+# Music Mate
