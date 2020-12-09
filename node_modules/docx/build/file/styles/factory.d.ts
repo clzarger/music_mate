@@ -1,4 +1,4 @@
-import { Styles } from "./";
+import { IStylesOptions } from "./styles";
 export declare class DefaultStylesFactory {
-    newInstance(): Styles;
+    newInstance(): IStylesOptions;
 }
