@@ -9,6 +9,8 @@ const axios = require('axios');
 // const fs = require('fs');
 // import * as fs from 'fs';
 // import { Document, Packer, Paragraph, Table, TableCell, TableRow } from 'docx';
+import _chunk from 'lodash/chunk';
+import PptxGenJS from 'pptxgenjs';
 
 // ===== TITLE CASE FUNCTION =====
 function toTitleCase(str) {
