@@ -3,6 +3,9 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import './styles.css';
 import App from './App';
+import './lyric_slideshow_ppt.js';
+import './lyric_handout_pdf.js';
+import './musician_chords_pdf.js';
 import './root.js';
 import reportWebVitals from './reportWebVitals';
 
