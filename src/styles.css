@@ -24,20 +24,37 @@
 }
 
 /* BUTTONS */
-/* Button Sample */
-.btn-sample {
+/* Button Orange */
+.btn-orange {
   color: #FFFFFF;
   background-color: #F55E00;
   border-color: #FFFFFF;
 }
 
-.btn-sample:hover,
-.btn-sample:focus,
-.btn-sample:active,
-.btn-sample.active,
-.open .dropdown-toggle.btn-sample {
+.btn-orange:hover,
+.btn-orange:focus,
+.btn-orange:active,
+.btn-orange.active,
+.open .dropdown-toggle.btn-orange {
   color: #FFFFFF;
   background-color: #00304B;
+  border-color: #FFFFFF;
+}
+
+/* Button Blue */
+.btn-blue {
+  color: #FFFFFF;
+  background-color: #00304B;
+  border-color: #FFFFFF;
+}
+
+.btn-blue:hover,
+.btn-blue:focus,
+.btn-blue:active,
+.btn-blue.active,
+.open .dropdown-toggle.btn-blue {
+  color: #FFFFFF;
+  background-color: #F55E00;
   border-color: #FFFFFF;
 }
 

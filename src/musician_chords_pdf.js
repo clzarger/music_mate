@@ -128,7 +128,7 @@ window.chords = function () {
   // update button to give user feedback
   document.getElementById("chordsProgress").innerHTML = "Creating File..."
   // set up input arrays to hold data from HTML side
-  var numberOfSongs = 4;
+  var numberOfSongs = 12;
   var titleArr = [];
   var artistArr = [];
   var lyricsArr = [];
@@ -139,7 +139,7 @@ window.chords = function () {
     lyricsArr[i] = document.getElementById("lyrics"+i).value;
   };
   // if user inputs nothing, add a placeholder slide (DATA VALIDATION) (This if statement is dumb, but I couldn't think of a clean way)
-    if (titleArr[0]=="" && titleArr[1]=="" && titleArr[2]=="" && titleArr[3]=="" && artistArr[0]=="" && artistArr[1]=="" && artistArr[2]=="" && artistArr[3]=="" && lyricsArr[0]=="" && lyricsArr[1]=="" && lyricsArr[2]=="" && lyricsArr[3]=="") {
+  if (titleArr[0]=="" && titleArr[1]=="" && titleArr[2]=="" && titleArr[3]=="" && titleArr[4]=="" && titleArr[5]=="" && titleArr[6]=="" && titleArr[7]=="" && titleArr[8]=="" && titleArr[9]=="" && titleArr[10]=="" && titleArr[11]=="" && artistArr[0]=="" && artistArr[1]=="" && artistArr[2]=="" && artistArr[3]=="" && artistArr[4]=="" && artistArr[5]=="" && artistArr[6]=="" && artistArr[7]=="" && artistArr[8]=="" && artistArr[9]=="" && artistArr[10]=="" && artistArr[11]=="" && lyricsArr[0]=="" && lyricsArr[1]=="" && lyricsArr[2]=="" && lyricsArr[3]=="" && lyricsArr[4]==""&& lyricsArr[5]=="" && lyricsArr[6]==""&& lyricsArr[7]=="" && lyricsArr[8]=="" && lyricsArr[9]=="" && lyricsArr[10]=="" && lyricsArr[11]=="") {
       titleArr[0] = "Title";
       artistArr[0] = "Artist";
       lyricsArr[0] = "[]Song Lyrics";

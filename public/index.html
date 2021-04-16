@@ -111,43 +111,156 @@
 			</div>
 		</div>
 
-		<!-- ===== INPUT TEXT BOXES ===== -->
-		<div class="row border-blue bg-transparent mb-3">
-			<div class="col-sm">
-				<div class="card-body">
-					<h1 class="font-weight-bold">Song 1</h1>
-					<input class="form-control" type="text" id="title0" placeholder="Title"> <br>
-					<input class="form-control" type="text" id="artist0" placeholder="Artist"> <br>
-					<textarea class="form-control" id="lyrics0" name="comments" cols="40" rows="10" placeholder="Lyrics & Chords*" style= "font-size: 15" ></textarea>
+		<!-- === INPUT TEXT BOXES === -->
+		<!-- === Toggle buttons === -->
+		<br>
+		<div class="container-fluid">
+			<button class="btn btn-secondary" type="button" data-toggle="collapse" data-target=".multi-collapse" aria-controls="song0 song1 song2">Toggle row 1</button>
+			<!-- <a class="btn btn-secondary" data-toggle="collapse" href="#song0" role="button" aria-controls="song0">Toggle 1</a>
+			<button class="btn btn-secondary" type="button" data-toggle="collapse" data-target="#song1" aria-controls="song1">Toggle 2</button>
+			<button class="btn btn-secondary" type="button" data-toggle="collapse" data-target="#song2" aria-controls="song2">Toggle 3</button> -->
+			<button class="btn btn-secondary" type="button" data-toggle="collapse" data-target=".multi-collapse2" aria-controls="song3 song4 song5">Toggle row 2</button>
+			<!-- <a class="btn btn-secondary" data-toggle="collapse" href="#song3" role="button" aria-controls="song3">Toggle 3</a>
+			<button class="btn btn-secondary" type="button" data-toggle="collapse" data-target="#song4" aria-controls="song4">Toggle 4</button>
+			<button class="btn btn-secondary" type="button" data-toggle="collapse" data-target="#song5" aria-controls="song5">Toggle 5</button> -->
+			<button class="btn btn-secondary" type="button" data-toggle="collapse" data-target=".multi-collapse3" aria-controls="song6 song7 song8">Toggle row 3</button>
+			<button class="btn btn-secondary" type="button" data-toggle="collapse" data-target=".multi-collapse4" aria-controls="song9 song10 song11">Toggle row 4</button>
+		</div>
+		<!-- === Songs 1 - 3 === -->
+		<div class="row">
+			<div class="col">
+				<div class="collapse multi-collapse show" id="song0">
+					<div class="card-body">
+						<h1 class="font-weight-bold">Song 1</h1>
+						<input class="form-control" type="text" id="title0" placeholder="Title"> <br>
+						<input class="form-control" type="text" id="artist0" placeholder="Artist"> <br>
+						<textarea class="form-control" id="lyrics0" name="comments" cols="40" rows="10" placeholder="Lyrics & Chords*" style="font-size: 15"></textarea>
+					</div>
 				</div>
 			</div>
-			<div class="col-sm">
-				<div class="card-body">
-					<h1 class="font-weight-bold">Song 2</h1>
-					<input class="form-control" type="text" id="title1" placeholder="Title"> <br>
-					<input class="form-control" type="text" id="artist1" placeholder="Artist"> <br>
-					<textarea class="form-control" id="lyrics1" name="comments" cols="40" rows="10" placeholder="Lyrics & Chords*" style="font-size: 15"></textarea>
+			<div class="col">
+				<div class="collapse multi-collapse show" id="song1">
+					<div class="card-body">
+						<h1 class="font-weight-bold">Song 2</h1>
+						<input class="form-control" type="text" id="title1" placeholder="Title"> <br>
+						<input class="form-control" type="text" id="artist1" placeholder="Artist"> <br>
+						<textarea class="form-control" id="lyrics1" name="comments" cols="40" rows="10" placeholder="Lyrics & Chords*" style="font-size: 15"></textarea>
+					</div>
 				</div>
 			</div>
-			<div class="col-sm">
-				<div class="card-body">
-					<h1 class="font-weight-bold">Song 3</h1>
-					<input class="form-control" type="text" id="title2" placeholder="Title"> <br>
-					<input class="form-control" type="text" id="artist2" placeholder="Artist"> <br>
-					<textarea class="form-control" id="lyrics2" name="comments" cols="40" rows="10" placeholder="Lyrics & Chords*" style="font-size: 15"></textarea>
-				</div>
-			</div>
-			<div class="col-sm">
-				<div class="card-body">
-					<h1 class="font-weight-bold">Song 4</h1>
-					<input class="form-control" type="text" id="title3" placeholder="Title"> <br>
-					<input class="form-control" type="text" id="artist3" placeholder="Artist"> <br>
-					<textarea class="form-control" id="lyrics3" name="comments" cols="40" rows="10" placeholder="Lyrics & Chords*" style="font-size: 15"></textarea>
+			<div class="col">
+				<div class="collapse multi-collapse show" id="song2">
+					<div class="card-body">
+						<h1 class="font-weight-bold">Song 3</h1>
+						<input class="form-control" type="text" id="title2" placeholder="Title"> <br>
+						<input class="form-control" type="text" id="artist2" placeholder="Artist"> <br>
+						<textarea class="form-control" id="lyrics2" name="comments" cols="40" rows="10" placeholder="Lyrics & Chords*" style="font-size: 15"></textarea>
+					</div>
 				</div>
 			</div>
 		</div>
-		<!-- horizontal line -->
-		<hr>
+		<!-- === Songs 4 - 6 === -->
+		<div class="row">
+			<div class="col">
+				<div class="collapse multi-collapse2" id="song3">
+					<div class="card-body">
+						<h1 class="font-weight-bold">Song 4</h1>
+						<input class="form-control" type="text" id="title3" placeholder="Title"> <br>
+						<input class="form-control" type="text" id="artist3" placeholder="Artist"> <br>
+						<textarea class="form-control" id="lyrics3" name="comments" cols="40" rows="10" placeholder="Lyrics & Chords*" style="font-size: 15"></textarea>
+					</div>
+				</div>
+			</div>
+			<div class="col">
+				<div class="collapse multi-collapse2" id="song4">
+					<div class="card-body">
+						<h1 class="font-weight-bold">Song 5</h1>
+						<input class="form-control" type="text" id="title4" placeholder="Title"> <br>
+						<input class="form-control" type="text" id="artist4" placeholder="Artist"> <br>
+						<textarea class="form-control" id="lyrics4" name="comments" cols="40" rows="10" placeholder="Lyrics & Chords*" style="font-size: 15"></textarea>
+					</div>
+				</div>
+			</div>
+			<div class="col">
+				<div class="collapse multi-collapse2" id="song5">
+					<div class="card-body">
+						<h1 class="font-weight-bold">Song 6</h1>
+						<input class="form-control" type="text" id="title5" placeholder="Title"> <br>
+						<input class="form-control" type="text" id="artist5" placeholder="Artist"> <br>
+						<textarea class="form-control" id="lyrics5" name="comments" cols="40" rows="10" placeholder="Lyrics & Chords*" style="font-size: 15"></textarea>
+					</div>
+				</div>
+			</div>
+		</div>
+			<!-- === Songs 7 - 9 === -->
+			<div class="row">
+				<div class="col">
+					<div class="collapse multi-collapse3" id="song6">
+						<div class="card-body">
+							<h1 class="font-weight-bold">Song 7</h1>
+							<input class="form-control" type="text" id="title6" placeholder="Title"> <br>
+							<input class="form-control" type="text" id="artist6" placeholder="Artist"> <br>
+							<textarea class="form-control" id="lyrics6" name="comments" cols="40" rows="10" placeholder="Lyrics & Chords*" style="font-size: 15"></textarea>
+						</div>
+					</div>
+				</div>
+				<div class="col">
+					<div class="collapse multi-collapse3" id="song7">
+						<div class="card-body">
+							<h1 class="font-weight-bold">Song 8</h1>
+							<input class="form-control" type="text" id="title7" placeholder="Title"> <br>
+							<input class="form-control" type="text" id="artist7" placeholder="Artist"> <br>
+							<textarea class="form-control" id="lyrics7" name="comments" cols="40" rows="10" placeholder="Lyrics & Chords*" style="font-size: 15"></textarea>
+						</div>
+					</div>
+				</div>
+				<div class="col">
+					<div class="collapse multi-collapse3" id="song8">
+						<div class="card-body">
+							<h1 class="font-weight-bold">Song 9</h1>
+							<input class="form-control" type="text" id="title8" placeholder="Title"> <br>
+							<input class="form-control" type="text" id="artist8" placeholder="Artist"> <br>
+							<textarea class="form-control" id="lyrics8" name="comments" cols="40" rows="10" placeholder="Lyrics & Chords*" style="font-size: 15"></textarea>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- === Songs 10 - 12 === -->
+			<div class="row">
+				<div class="col">
+					<div class="collapse multi-collapse4" id="song9">
+						<div class="card-body">
+							<h1 class="font-weight-bold">Song 10</h1>
+							<input class="form-control" type="text" id="title9" placeholder="Title"> <br>
+							<input class="form-control" type="text" id="artist9" placeholder="Artist"> <br>
+							<textarea class="form-control" id="lyrics9" name="comments" cols="40" rows="10" placeholder="Lyrics & Chords*" style="font-size: 15"></textarea>
+						</div>
+					</div>
+				</div>
+				<div class="col">
+					<div class="collapse multi-collapse4" id="song10">
+						<div class="card-body">
+							<h1 class="font-weight-bold">Song 11</h1>
+							<input class="form-control" type="text" id="title10" placeholder="Title"> <br>
+							<input class="form-control" type="text" id="artist10" placeholder="Artist"> <br>
+							<textarea class="form-control" id="lyrics10" name="comments" cols="40" rows="10" placeholder="Lyrics & Chords*" style="font-size: 15"></textarea>
+						</div>
+					</div>
+				</div>
+				<div class="col">
+					<div class="collapse multi-collapse4" id="song11">
+						<div class="card-body">
+							<h1 class="font-weight-bold">Song 12</h1>
+							<input class="form-control" type="text" id="title11" placeholder="Title"> <br>
+							<input class="form-control" type="text" id="artist11" placeholder="Artist"> <br>
+							<textarea class="form-control" id="lyrics11" name="comments" cols="40" rows="10" placeholder="Lyrics & Chords*" style="font-size: 15"></textarea>
+						</div>
+					</div>
+				</div>
+			</div>
+
+
+		<hr> 		<!-- horizontal line -->
 		<br>
 
 		<!-- ===== DOWNLOAD BUTTONS ===== -->
@@ -155,7 +268,7 @@
 			<!-- LYRIC SLIDESHOW BUTTON -->
 			<div class="col-sm">
 				<form class="col text-center">
-					<button id="slidesProgress" type="button" class="btn btn-sample btn-lg" onclick="slides()">Lyric Slideshow</button> <br>
+					<button id="slidesProgress" type="button" class="btn btn-orange btn-lg" onclick="slides()">Lyric Slideshow</button> <br>
 					<div class="dropdown">
 						<button class="btn btn-secondary dropdown-toggle btn-sm" type="button" id="dropdownMenuPickLines" data-toggle="dropdown" aria-expanded="false">
 							Max lines per slide: 4
@@ -188,13 +301,13 @@
 			<!-- LYRIC HANDOUT BUTTON -->
 			<div class="col-sm">
 				<form class="col text-center">
-					<button id="handoutProgress" type="button" class="btn btn-sample btn-lg" onclick="handout()">Lyric Handout</button>
+					<button id="handoutProgress" type="button" class="btn btn-orange btn-lg" onclick="handout()">Lyric Handout</button>
 				</form>
 			</div>
 			<!-- MUSICIAN CHORDS BUTTON -->
 			<div class="col-sm">
 				<form class="col text-center">
-					<button id="chordsProgress" type="button" class="btn btn-sample btn-lg" onclick="chords()">Musician Chords</button>
+					<button id="chordsProgress" type="button" class="btn btn-orange btn-lg" onclick="chords()">Musician Chords</button>
 					<div class="dropdown">
 						<button class="btn btn-secondary dropdown-toggle btn-sm" type="button" id="dropdownMenuPickColumns" data-toggle="dropdown" aria-expanded="false">
 							Number of columns: 2
@@ -230,7 +343,7 @@
 			<!-- LYRIC HANDOUT BUTTON -->
 			<!-- <div class="col-sm">
 			<form class="col text-center">
-			<button id="handoutDocProgress" type="button" class="btn btn-sample btn-lg" onclick="handoutDoc()">Lyric Handout (Doc)</button>
+			<button id="handoutDocProgress" type="button" class="btn btn-orange btn-lg" onclick="handoutDoc()">Lyric Handout (Doc)</button>
 		</form>
 	</div> -->
 	</div>
@@ -272,3 +385,40 @@
 	-->
 </body>
 </html>
+
+<!-- OLD VERSION without toggle -->
+	<!-- ===== INPUT TEXT BOXES =====
+	<div class="row border-blue bg-transparent mb-3">
+		<div class="col-sm">
+			<div class="card-body">
+				<h1 class="font-weight-bold">Song 1</h1>
+				<input class="form-control" type="text" id="title0" placeholder="Title"> <br>
+				<input class="form-control" type="text" id="artist0" placeholder="Artist"> <br>
+				<textarea class="form-control" id="lyrics0" name="comments" cols="40" rows="10" placeholder="Lyrics & Chords*" style= "font-size: 15" ></textarea>
+			</div>
+		</div>
+		<div class="col-sm">
+			<div class="card-body">
+				<h1 class="font-weight-bold">Song 2</h1>
+				<input class="form-control" type="text" id="title1" placeholder="Title"> <br>
+				<input class="form-control" type="text" id="artist1" placeholder="Artist"> <br>
+				<textarea class="form-control" id="lyrics1" name="comments" cols="40" rows="10" placeholder="Lyrics & Chords*" style="font-size: 15"></textarea>
+			</div>
+		</div>
+		<div class="col-sm">
+			<div class="card-body">
+				<h1 class="font-weight-bold">Song 3</h1>
+				<input class="form-control" type="text" id="title2" placeholder="Title"> <br>
+				<input class="form-control" type="text" id="artist2" placeholder="Artist"> <br>
+				<textarea class="form-control" id="lyrics2" name="comments" cols="40" rows="10" placeholder="Lyrics & Chords*" style="font-size: 15"></textarea>
+			</div>
+		</div>
+		<div class="col-sm">
+			<div class="card-body">
+				<h1 class="font-weight-bold">Song 4</h1>
+				<input class="form-control" type="text" id="title3" placeholder="Title"> <br>
+				<input class="form-control" type="text" id="artist3" placeholder="Artist"> <br>
+				<textarea class="form-control" id="lyrics3" name="comments" cols="40" rows="10" placeholder="Lyrics & Chords*" style="font-size: 15"></textarea>
+			</div>
+		</div>
+	</div> -->
