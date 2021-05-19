@@ -1,7 +1,7 @@
 /* eslint-disable */
 // lyric slideshow powerpoint script
 
-// ===== NODE PACKAGES =====   *** I GOT IT TO WORK OUTSIDE OF MY SCRIPT. PPTX THAT IS, if i put it in the top in root.js ***
+// ===== NODE PACKAGES =====
 import _chunk from 'lodash/chunk';
 import pptxgen from 'pptxgenjs';
 // const pptxgen = require('./lib/pptxgen.bundle.js');
