@@ -1,4 +1,3 @@
-/* eslint-disable */
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.PDFDocument = f()}})(function(){var define,module,exports;return (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
 (function (Buffer){
 'use strict';
@@ -23,12 +22,14 @@ class PDFAbstractReference {
 }
 
 /*
-PDFNameTree - represents a name tree object
+PDFTree - abstract base class for name and number tree objects
 */
 
-class PDFNameTree {
-  constructor() {
-    this._items = {};
+class PDFTree {
+  constructor(options = {}) {
+    this._items = {}; // disable /Limits output for this tree
+
+    this.limits = typeof options.limits === 'boolean' ? options.limits : true;
   }
 
   add(key, val) {
@@ -41,24 +42,40 @@ class PDFNameTree {
 
   toString() {
     // Needs to be sorted by key
-    const sortedKeys = Object.keys(this._items).sort((a, b) => a.localeCompare(b));
+    const sortedKeys = Object.keys(this._items).sort((a, b) => this._compareKeys(a, b));
     const out = ['<<'];
 
-    if (sortedKeys.length > 1) {
+    if (this.limits && sortedKeys.length > 1) {
       const first = sortedKeys[0],
             last = sortedKeys[sortedKeys.length - 1];
-      out.push(`  /Limits ${PDFObject.convert([new String(first), new String(last)])}`);
+      out.push(`  /Limits ${PDFObject.convert([this._dataForKey(first), this._dataForKey(last)])}`);
     }
 
-    out.push('  /Names [');
+    out.push(`  /${this._keysName()} [`);
 
     for (let key of sortedKeys) {
-      out.push(`    ${PDFObject.convert(new String(key))} ${PDFObject.convert(this._items[key])}`);
+      out.push(`    ${PDFObject.convert(this._dataForKey(key))} ${PDFObject.convert(this._items[key])}`);
     }
 
     out.push(']');
     out.push('>>');
     return out.join('\n');
+  }
+
+  _compareKeys()
+  /*a, b*/
+  {
+    throw new Error('Must be implemented by subclasses');
+  }
+
+  _keysName() {
+    throw new Error('Must be implemented by subclasses');
+  }
+
+  _dataForKey()
+  /*k*/
+  {
+    throw new Error('Must be implemented by subclasses');
   }
 
 }
@@ -70,7 +87,7 @@ By Devon Govett
 
 const pad = (str, length) => (Array(length + 1).join('0') + str).slice(-length);
 
-const escapableRe = /[\n\r\t\b\f\(\)\\]/g;
+const escapableRe = /[\n\r\t\b\f()\\]/g;
 const escapable = {
   '\n': '\\n',
   '\r': '\\r',
@@ -136,13 +153,13 @@ class PDFObject {
       return `(${string})`; // Buffers are converted to PDF hex strings
     } else if (Buffer.isBuffer(object)) {
       return `<${object.toString('hex')}>`;
-    } else if (object instanceof PDFAbstractReference || object instanceof PDFNameTree) {
+    } else if (object instanceof PDFAbstractReference || object instanceof PDFTree) {
       return object.toString();
     } else if (object instanceof Date) {
       let string = `D:${pad(object.getUTCFullYear(), 4)}` + pad(object.getUTCMonth() + 1, 2) + pad(object.getUTCDate(), 2) + pad(object.getUTCHours(), 2) + pad(object.getUTCMinutes(), 2) + pad(object.getUTCSeconds(), 2) + 'Z'; // Encrypt the string when necessary
 
       if (encryptFn) {
-        string = encryptFn(new Buffer(string, 'ascii')).toString('binary'); // Escape characters as required by the spec
+        string = encryptFn(Buffer.from(string, 'ascii')).toString('binary'); // Escape characters as required by the spec
 
         string = string.replace(escapableRe, c => escapable[c]);
       }
@@ -197,7 +214,7 @@ class PDFReference extends PDFAbstractReference {
 
   write(chunk) {
     if (!Buffer.isBuffer(chunk)) {
-      chunk = new Buffer(chunk + '\n', 'binary');
+      chunk = Buffer.from(chunk + '\n', 'binary');
     }
 
     this.uncompressedLength += chunk.length;
@@ -362,7 +379,8 @@ class PDFPage {
       Contents: this.content,
       Resources: this.resources
     });
-  } // Lazily create these dictionaries
+    this.markings = [];
+  } // Lazily create these objects
 
 
   get fonts() {
@@ -390,6 +408,11 @@ class PDFPage {
     return data.Annots != null ? data.Annots : data.Annots = [];
   }
 
+  get structParentTreeKey() {
+    const data = this.dictionary.data;
+    return data.StructParents != null ? data.StructParents : data.StructParents = this.document.createStructParentTreeNextKey();
+  }
+
   maxY() {
     return this.height - this.margins.bottom;
   }
@@ -402,6 +425,25 @@ class PDFPage {
     this.dictionary.end();
     this.resources.end();
     return this.content.end();
+  }
+
+}
+
+/*
+PDFNameTree - represents a name tree object
+*/
+
+class PDFNameTree extends PDFTree {
+  _compareKeys(a, b) {
+    return a.localeCompare(b);
+  }
+
+  _keysName() {
+    return "Names";
+  }
+
+  _dataForKey(k) {
+    return new String(k);
   }
 
 }
@@ -438,18 +480,14 @@ function inRange(value, rangeGroup) {
   return false;
 }
 
-/* eslint-disable prettier/prettier */
-
 /**
  * A.1 Unassigned code points in Unicode 3.2
  * @link https://tools.ietf.org/html/rfc3454#appendix-A.1
  */
 
-const unassigned_code_points = [0x0221, 0x0221, 0x0234, 0x024f, 0x02ae, 0x02af, 0x02ef, 0x02ff, 0x0350, 0x035f, 0x0370, 0x0373, 0x0376, 0x0379, 0x037b, 0x037d, 0x037f, 0x0383, 0x038b, 0x038b, 0x038d, 0x038d, 0x03a2, 0x03a2, 0x03cf, 0x03cf, 0x03f7, 0x03ff, 0x0487, 0x0487, 0x04cf, 0x04cf, 0x04f6, 0x04f7, 0x04fa, 0x04ff, 0x0510, 0x0530, 0x0557, 0x0558, 0x0560, 0x0560, 0x0588, 0x0588, 0x058b, 0x0590, 0x05a2, 0x05a2, 0x05ba, 0x05ba, 0x05c5, 0x05cf, 0x05eb, 0x05ef, 0x05f5, 0x060b, 0x060d, 0x061a, 0x061c, 0x061e, 0x0620, 0x0620, 0x063b, 0x063f, 0x0656, 0x065f, 0x06ee, 0x06ef, 0x06ff, 0x06ff, 0x070e, 0x070e, 0x072d, 0x072f, 0x074b, 0x077f, 0x07b2, 0x0900, 0x0904, 0x0904, 0x093a, 0x093b, 0x094e, 0x094f, 0x0955, 0x0957, 0x0971, 0x0980, 0x0984, 0x0984, 0x098d, 0x098e, 0x0991, 0x0992, 0x09a9, 0x09a9, 0x09b1, 0x09b1, 0x09b3, 0x09b5, 0x09ba, 0x09bb, 0x09bd, 0x09bd, 0x09c5, 0x09c6, 0x09c9, 0x09ca, 0x09ce, 0x09d6, 0x09d8, 0x09db, 0x09de, 0x09de, 0x09e4, 0x09e5, 0x09fb, 0x0a01, 0x0a03, 0x0a04, 0x0a0b, 0x0a0e, 0x0a11, 0x0a12, 0x0a29, 0x0a29, 0x0a31, 0x0a31, 0x0a34, 0x0a34, 0x0a37, 0x0a37, 0x0a3a, 0x0a3b, 0x0a3d, 0x0a3d, 0x0a43, 0x0a46, 0x0a49, 0x0a4a, 0x0a4e, 0x0a58, 0x0a5d, 0x0a5d, 0x0a5f, 0x0a65, 0x0a75, 0x0a80, 0x0a84, 0x0a84, 0x0a8c, 0x0a8c, 0x0a8e, 0x0a8e, 0x0a92, 0x0a92, 0x0aa9, 0x0aa9, 0x0ab1, 0x0ab1, 0x0ab4, 0x0ab4, 0x0aba, 0x0abb, 0x0ac6, 0x0ac6, 0x0aca, 0x0aca, 0x0ace, 0x0acf, 0x0ad1, 0x0adf, 0x0ae1, 0x0ae5, 0x0af0, 0x0b00, 0x0b04, 0x0b04, 0x0b0d, 0x0b0e, 0x0b11, 0x0b12, 0x0b29, 0x0b29, 0x0b31, 0x0b31, 0x0b34, 0x0b35, 0x0b3a, 0x0b3b, 0x0b44, 0x0b46, 0x0b49, 0x0b4a, 0x0b4e, 0x0b55, 0x0b58, 0x0b5b, 0x0b5e, 0x0b5e, 0x0b62, 0x0b65, 0x0b71, 0x0b81, 0x0b84, 0x0b84, 0x0b8b, 0x0b8d, 0x0b91, 0x0b91, 0x0b96, 0x0b98, 0x0b9b, 0x0b9b, 0x0b9d, 0x0b9d, 0x0ba0, 0x0ba2, 0x0ba5, 0x0ba7, 0x0bab, 0x0bad, 0x0bb6, 0x0bb6, 0x0bba, 0x0bbd, 0x0bc3, 0x0bc5, 0x0bc9, 0x0bc9, 0x0bce, 0x0bd6, 0x0bd8, 0x0be6, 0x0bf3, 0x0c00, 0x0c04, 0x0c04, 0x0c0d, 0x0c0d, 0x0c11, 0x0c11, 0x0c29, 0x0c29, 0x0c34, 0x0c34, 0x0c3a, 0x0c3d, 0x0c45, 0x0c45, 0x0c49, 0x0c49, 0x0c4e, 0x0c54, 0x0c57, 0x0c5f, 0x0c62, 0x0c65, 0x0c70, 0x0c81, 0x0c84, 0x0c84, 0x0c8d, 0x0c8d, 0x0c91, 0x0c91, 0x0ca9, 0x0ca9, 0x0cb4, 0x0cb4, 0x0cba, 0x0cbd, 0x0cc5, 0x0cc5, 0x0cc9, 0x0cc9, 0x0cce, 0x0cd4, 0x0cd7, 0x0cdd, 0x0cdf, 0x0cdf, 0x0ce2, 0x0ce5, 0x0cf0, 0x0d01, 0x0d04, 0x0d04, 0x0d0d, 0x0d0d, 0x0d11, 0x0d11, 0x0d29, 0x0d29, 0x0d3a, 0x0d3d, 0x0d44, 0x0d45, 0x0d49, 0x0d49, 0x0d4e, 0x0d56, 0x0d58, 0x0d5f, 0x0d62, 0x0d65, 0x0d70, 0x0d81, 0x0d84, 0x0d84, 0x0d97, 0x0d99, 0x0db2, 0x0db2, 0x0dbc, 0x0dbc, 0x0dbe, 0x0dbf, 0x0dc7, 0x0dc9, 0x0dcb, 0x0dce, 0x0dd5, 0x0dd5, 0x0dd7, 0x0dd7, 0x0de0, 0x0df1, 0x0df5, 0x0e00, 0x0e3b, 0x0e3e, 0x0e5c, 0x0e80, 0x0e83, 0x0e83, 0x0e85, 0x0e86, 0x0e89, 0x0e89, 0x0e8b, 0x0e8c, 0x0e8e, 0x0e93, 0x0e98, 0x0e98, 0x0ea0, 0x0ea0, 0x0ea4, 0x0ea4, 0x0ea6, 0x0ea6, 0x0ea8, 0x0ea9, 0x0eac, 0x0eac, 0x0eba, 0x0eba, 0x0ebe, 0x0ebf, 0x0ec5, 0x0ec5, 0x0ec7, 0x0ec7, 0x0ece, 0x0ecf, 0x0eda, 0x0edb, 0x0ede, 0x0eff, 0x0f48, 0x0f48, 0x0f6b, 0x0f70, 0x0f8c, 0x0f8f, 0x0f98, 0x0f98, 0x0fbd, 0x0fbd, 0x0fcd, 0x0fce, 0x0fd0, 0x0fff, 0x1022, 0x1022, 0x1028, 0x1028, 0x102b, 0x102b, 0x1033, 0x1035, 0x103a, 0x103f, 0x105a, 0x109f, 0x10c6, 0x10cf, 0x10f9, 0x10fa, 0x10fc, 0x10ff, 0x115a, 0x115e, 0x11a3, 0x11a7, 0x11fa, 0x11ff, 0x1207, 0x1207, 0x1247, 0x1247, 0x1249, 0x1249, 0x124e, 0x124f, 0x1257, 0x1257, 0x1259, 0x1259, 0x125e, 0x125f, 0x1287, 0x1287, 0x1289, 0x1289, 0x128e, 0x128f, 0x12af, 0x12af, 0x12b1, 0x12b1, 0x12b6, 0x12b7, 0x12bf, 0x12bf, 0x12c1, 0x12c1, 0x12c6, 0x12c7, 0x12cf, 0x12cf, 0x12d7, 0x12d7, 0x12ef, 0x12ef, 0x130f, 0x130f, 0x1311, 0x1311, 0x1316, 0x1317, 0x131f, 0x131f, 0x1347, 0x1347, 0x135b, 0x1360, 0x137d, 0x139f, 0x13f5, 0x1400, 0x1677, 0x167f, 0x169d, 0x169f, 0x16f1, 0x16ff, 0x170d, 0x170d, 0x1715, 0x171f, 0x1737, 0x173f, 0x1754, 0x175f, 0x176d, 0x176d, 0x1771, 0x1771, 0x1774, 0x177f, 0x17dd, 0x17df, 0x17ea, 0x17ff, 0x180f, 0x180f, 0x181a, 0x181f, 0x1878, 0x187f, 0x18aa, 0x1dff, 0x1e9c, 0x1e9f, 0x1efa, 0x1eff, 0x1f16, 0x1f17, 0x1f1e, 0x1f1f, 0x1f46, 0x1f47, 0x1f4e, 0x1f4f, 0x1f58, 0x1f58, 0x1f5a, 0x1f5a, 0x1f5c, 0x1f5c, 0x1f5e, 0x1f5e, 0x1f7e, 0x1f7f, 0x1fb5, 0x1fb5, 0x1fc5, 0x1fc5, 0x1fd4, 0x1fd5, 0x1fdc, 0x1fdc, 0x1ff0, 0x1ff1, 0x1ff5, 0x1ff5, 0x1fff, 0x1fff, 0x2053, 0x2056, 0x2058, 0x205e, 0x2064, 0x2069, 0x2072, 0x2073, 0x208f, 0x209f, 0x20b2, 0x20cf, 0x20eb, 0x20ff, 0x213b, 0x213c, 0x214c, 0x2152, 0x2184, 0x218f, 0x23cf, 0x23ff, 0x2427, 0x243f, 0x244b, 0x245f, 0x24ff, 0x24ff, 0x2614, 0x2615, 0x2618, 0x2618, 0x267e, 0x267f, 0x268a, 0x2700, 0x2705, 0x2705, 0x270a, 0x270b, 0x2728, 0x2728, 0x274c, 0x274c, 0x274e, 0x274e, 0x2753, 0x2755, 0x2757, 0x2757, 0x275f, 0x2760, 0x2795, 0x2797, 0x27b0, 0x27b0, 0x27bf, 0x27cf, 0x27ec, 0x27ef, 0x2b00, 0x2e7f, 0x2e9a, 0x2e9a, 0x2ef4, 0x2eff, 0x2fd6, 0x2fef, 0x2ffc, 0x2fff, 0x3040, 0x3040, 0x3097, 0x3098, 0x3100, 0x3104, 0x312d, 0x3130, 0x318f, 0x318f, 0x31b8, 0x31ef, 0x321d, 0x321f, 0x3244, 0x3250, 0x327c, 0x327e, 0x32cc, 0x32cf, 0x32ff, 0x32ff, 0x3377, 0x337a, 0x33de, 0x33df, 0x33ff, 0x33ff, 0x4db6, 0x4dff, 0x9fa6, 0x9fff, 0xa48d, 0xa48f, 0xa4c7, 0xabff, 0xd7a4, 0xd7ff, 0xfa2e, 0xfa2f, 0xfa6b, 0xfaff, 0xfb07, 0xfb12, 0xfb18, 0xfb1c, 0xfb37, 0xfb37, 0xfb3d, 0xfb3d, 0xfb3f, 0xfb3f, 0xfb42, 0xfb42, 0xfb45, 0xfb45, 0xfbb2, 0xfbd2, 0xfd40, 0xfd4f, 0xfd90, 0xfd91, 0xfdc8, 0xfdcf, 0xfdfd, 0xfdff, 0xfe10, 0xfe1f, 0xfe24, 0xfe2f, 0xfe47, 0xfe48, 0xfe53, 0xfe53, 0xfe67, 0xfe67, 0xfe6c, 0xfe6f, 0xfe75, 0xfe75, 0xfefd, 0xfefe, 0xff00, 0xff00, 0xffbf, 0xffc1, 0xffc8, 0xffc9, 0xffd0, 0xffd1, 0xffd8, 0xffd9, 0xffdd, 0xffdf, 0xffe7, 0xffe7, 0xffef, 0xfff8, 0x10000, 0x102ff, 0x1031f, 0x1031f, 0x10324, 0x1032f, 0x1034b, 0x103ff, 0x10426, 0x10427, 0x1044e, 0x1cfff, 0x1d0f6, 0x1d0ff, 0x1d127, 0x1d129, 0x1d1de, 0x1d3ff, 0x1d455, 0x1d455, 0x1d49d, 0x1d49d, 0x1d4a0, 0x1d4a1, 0x1d4a3, 0x1d4a4, 0x1d4a7, 0x1d4a8, 0x1d4ad, 0x1d4ad, 0x1d4ba, 0x1d4ba, 0x1d4bc, 0x1d4bc, 0x1d4c1, 0x1d4c1, 0x1d4c4, 0x1d4c4, 0x1d506, 0x1d506, 0x1d50b, 0x1d50c, 0x1d515, 0x1d515, 0x1d51d, 0x1d51d, 0x1d53a, 0x1d53a, 0x1d53f, 0x1d53f, 0x1d545, 0x1d545, 0x1d547, 0x1d549, 0x1d551, 0x1d551, 0x1d6a4, 0x1d6a7, 0x1d7ca, 0x1d7cd, 0x1d800, 0x1fffd, 0x2a6d7, 0x2f7ff, 0x2fa1e, 0x2fffd, 0x30000, 0x3fffd, 0x40000, 0x4fffd, 0x50000, 0x5fffd, 0x60000, 0x6fffd, 0x70000, 0x7fffd, 0x80000, 0x8fffd, 0x90000, 0x9fffd, 0xa0000, 0xafffd, 0xb0000, 0xbfffd, 0xc0000, 0xcfffd, 0xd0000, 0xdfffd, 0xe0000, 0xe0000, 0xe0002, 0xe001f, 0xe0080, 0xefffd];
-/* eslint-enable */
+const unassigned_code_points = [0x0221, 0x0221, 0x0234, 0x024f, 0x02ae, 0x02af, 0x02ef, 0x02ff, 0x0350, 0x035f, 0x0370, 0x0373, 0x0376, 0x0379, 0x037b, 0x037d, 0x037f, 0x0383, 0x038b, 0x038b, 0x038d, 0x038d, 0x03a2, 0x03a2, 0x03cf, 0x03cf, 0x03f7, 0x03ff, 0x0487, 0x0487, 0x04cf, 0x04cf, 0x04f6, 0x04f7, 0x04fa, 0x04ff, 0x0510, 0x0530, 0x0557, 0x0558, 0x0560, 0x0560, 0x0588, 0x0588, 0x058b, 0x0590, 0x05a2, 0x05a2, 0x05ba, 0x05ba, 0x05c5, 0x05cf, 0x05eb, 0x05ef, 0x05f5, 0x060b, 0x060d, 0x061a, 0x061c, 0x061e, 0x0620, 0x0620, 0x063b, 0x063f, 0x0656, 0x065f, 0x06ee, 0x06ef, 0x06ff, 0x06ff, 0x070e, 0x070e, 0x072d, 0x072f, 0x074b, 0x077f, 0x07b2, 0x0900, 0x0904, 0x0904, 0x093a, 0x093b, 0x094e, 0x094f, 0x0955, 0x0957, 0x0971, 0x0980, 0x0984, 0x0984, 0x098d, 0x098e, 0x0991, 0x0992, 0x09a9, 0x09a9, 0x09b1, 0x09b1, 0x09b3, 0x09b5, 0x09ba, 0x09bb, 0x09bd, 0x09bd, 0x09c5, 0x09c6, 0x09c9, 0x09ca, 0x09ce, 0x09d6, 0x09d8, 0x09db, 0x09de, 0x09de, 0x09e4, 0x09e5, 0x09fb, 0x0a01, 0x0a03, 0x0a04, 0x0a0b, 0x0a0e, 0x0a11, 0x0a12, 0x0a29, 0x0a29, 0x0a31, 0x0a31, 0x0a34, 0x0a34, 0x0a37, 0x0a37, 0x0a3a, 0x0a3b, 0x0a3d, 0x0a3d, 0x0a43, 0x0a46, 0x0a49, 0x0a4a, 0x0a4e, 0x0a58, 0x0a5d, 0x0a5d, 0x0a5f, 0x0a65, 0x0a75, 0x0a80, 0x0a84, 0x0a84, 0x0a8c, 0x0a8c, 0x0a8e, 0x0a8e, 0x0a92, 0x0a92, 0x0aa9, 0x0aa9, 0x0ab1, 0x0ab1, 0x0ab4, 0x0ab4, 0x0aba, 0x0abb, 0x0ac6, 0x0ac6, 0x0aca, 0x0aca, 0x0ace, 0x0acf, 0x0ad1, 0x0adf, 0x0ae1, 0x0ae5, 0x0af0, 0x0b00, 0x0b04, 0x0b04, 0x0b0d, 0x0b0e, 0x0b11, 0x0b12, 0x0b29, 0x0b29, 0x0b31, 0x0b31, 0x0b34, 0x0b35, 0x0b3a, 0x0b3b, 0x0b44, 0x0b46, 0x0b49, 0x0b4a, 0x0b4e, 0x0b55, 0x0b58, 0x0b5b, 0x0b5e, 0x0b5e, 0x0b62, 0x0b65, 0x0b71, 0x0b81, 0x0b84, 0x0b84, 0x0b8b, 0x0b8d, 0x0b91, 0x0b91, 0x0b96, 0x0b98, 0x0b9b, 0x0b9b, 0x0b9d, 0x0b9d, 0x0ba0, 0x0ba2, 0x0ba5, 0x0ba7, 0x0bab, 0x0bad, 0x0bb6, 0x0bb6, 0x0bba, 0x0bbd, 0x0bc3, 0x0bc5, 0x0bc9, 0x0bc9, 0x0bce, 0x0bd6, 0x0bd8, 0x0be6, 0x0bf3, 0x0c00, 0x0c04, 0x0c04, 0x0c0d, 0x0c0d, 0x0c11, 0x0c11, 0x0c29, 0x0c29, 0x0c34, 0x0c34, 0x0c3a, 0x0c3d, 0x0c45, 0x0c45, 0x0c49, 0x0c49, 0x0c4e, 0x0c54, 0x0c57, 0x0c5f, 0x0c62, 0x0c65, 0x0c70, 0x0c81, 0x0c84, 0x0c84, 0x0c8d, 0x0c8d, 0x0c91, 0x0c91, 0x0ca9, 0x0ca9, 0x0cb4, 0x0cb4, 0x0cba, 0x0cbd, 0x0cc5, 0x0cc5, 0x0cc9, 0x0cc9, 0x0cce, 0x0cd4, 0x0cd7, 0x0cdd, 0x0cdf, 0x0cdf, 0x0ce2, 0x0ce5, 0x0cf0, 0x0d01, 0x0d04, 0x0d04, 0x0d0d, 0x0d0d, 0x0d11, 0x0d11, 0x0d29, 0x0d29, 0x0d3a, 0x0d3d, 0x0d44, 0x0d45, 0x0d49, 0x0d49, 0x0d4e, 0x0d56, 0x0d58, 0x0d5f, 0x0d62, 0x0d65, 0x0d70, 0x0d81, 0x0d84, 0x0d84, 0x0d97, 0x0d99, 0x0db2, 0x0db2, 0x0dbc, 0x0dbc, 0x0dbe, 0x0dbf, 0x0dc7, 0x0dc9, 0x0dcb, 0x0dce, 0x0dd5, 0x0dd5, 0x0dd7, 0x0dd7, 0x0de0, 0x0df1, 0x0df5, 0x0e00, 0x0e3b, 0x0e3e, 0x0e5c, 0x0e80, 0x0e83, 0x0e83, 0x0e85, 0x0e86, 0x0e89, 0x0e89, 0x0e8b, 0x0e8c, 0x0e8e, 0x0e93, 0x0e98, 0x0e98, 0x0ea0, 0x0ea0, 0x0ea4, 0x0ea4, 0x0ea6, 0x0ea6, 0x0ea8, 0x0ea9, 0x0eac, 0x0eac, 0x0eba, 0x0eba, 0x0ebe, 0x0ebf, 0x0ec5, 0x0ec5, 0x0ec7, 0x0ec7, 0x0ece, 0x0ecf, 0x0eda, 0x0edb, 0x0ede, 0x0eff, 0x0f48, 0x0f48, 0x0f6b, 0x0f70, 0x0f8c, 0x0f8f, 0x0f98, 0x0f98, 0x0fbd, 0x0fbd, 0x0fcd, 0x0fce, 0x0fd0, 0x0fff, 0x1022, 0x1022, 0x1028, 0x1028, 0x102b, 0x102b, 0x1033, 0x1035, 0x103a, 0x103f, 0x105a, 0x109f, 0x10c6, 0x10cf, 0x10f9, 0x10fa, 0x10fc, 0x10ff, 0x115a, 0x115e, 0x11a3, 0x11a7, 0x11fa, 0x11ff, 0x1207, 0x1207, 0x1247, 0x1247, 0x1249, 0x1249, 0x124e, 0x124f, 0x1257, 0x1257, 0x1259, 0x1259, 0x125e, 0x125f, 0x1287, 0x1287, 0x1289, 0x1289, 0x128e, 0x128f, 0x12af, 0x12af, 0x12b1, 0x12b1, 0x12b6, 0x12b7, 0x12bf, 0x12bf, 0x12c1, 0x12c1, 0x12c6, 0x12c7, 0x12cf, 0x12cf, 0x12d7, 0x12d7, 0x12ef, 0x12ef, 0x130f, 0x130f, 0x1311, 0x1311, 0x1316, 0x1317, 0x131f, 0x131f, 0x1347, 0x1347, 0x135b, 0x1360, 0x137d, 0x139f, 0x13f5, 0x1400, 0x1677, 0x167f, 0x169d, 0x169f, 0x16f1, 0x16ff, 0x170d, 0x170d, 0x1715, 0x171f, 0x1737, 0x173f, 0x1754, 0x175f, 0x176d, 0x176d, 0x1771, 0x1771, 0x1774, 0x177f, 0x17dd, 0x17df, 0x17ea, 0x17ff, 0x180f, 0x180f, 0x181a, 0x181f, 0x1878, 0x187f, 0x18aa, 0x1dff, 0x1e9c, 0x1e9f, 0x1efa, 0x1eff, 0x1f16, 0x1f17, 0x1f1e, 0x1f1f, 0x1f46, 0x1f47, 0x1f4e, 0x1f4f, 0x1f58, 0x1f58, 0x1f5a, 0x1f5a, 0x1f5c, 0x1f5c, 0x1f5e, 0x1f5e, 0x1f7e, 0x1f7f, 0x1fb5, 0x1fb5, 0x1fc5, 0x1fc5, 0x1fd4, 0x1fd5, 0x1fdc, 0x1fdc, 0x1ff0, 0x1ff1, 0x1ff5, 0x1ff5, 0x1fff, 0x1fff, 0x2053, 0x2056, 0x2058, 0x205e, 0x2064, 0x2069, 0x2072, 0x2073, 0x208f, 0x209f, 0x20b2, 0x20cf, 0x20eb, 0x20ff, 0x213b, 0x213c, 0x214c, 0x2152, 0x2184, 0x218f, 0x23cf, 0x23ff, 0x2427, 0x243f, 0x244b, 0x245f, 0x24ff, 0x24ff, 0x2614, 0x2615, 0x2618, 0x2618, 0x267e, 0x267f, 0x268a, 0x2700, 0x2705, 0x2705, 0x270a, 0x270b, 0x2728, 0x2728, 0x274c, 0x274c, 0x274e, 0x274e, 0x2753, 0x2755, 0x2757, 0x2757, 0x275f, 0x2760, 0x2795, 0x2797, 0x27b0, 0x27b0, 0x27bf, 0x27cf, 0x27ec, 0x27ef, 0x2b00, 0x2e7f, 0x2e9a, 0x2e9a, 0x2ef4, 0x2eff, 0x2fd6, 0x2fef, 0x2ffc, 0x2fff, 0x3040, 0x3040, 0x3097, 0x3098, 0x3100, 0x3104, 0x312d, 0x3130, 0x318f, 0x318f, 0x31b8, 0x31ef, 0x321d, 0x321f, 0x3244, 0x3250, 0x327c, 0x327e, 0x32cc, 0x32cf, 0x32ff, 0x32ff, 0x3377, 0x337a, 0x33de, 0x33df, 0x33ff, 0x33ff, 0x4db6, 0x4dff, 0x9fa6, 0x9fff, 0xa48d, 0xa48f, 0xa4c7, 0xabff, 0xd7a4, 0xd7ff, 0xfa2e, 0xfa2f, 0xfa6b, 0xfaff, 0xfb07, 0xfb12, 0xfb18, 0xfb1c, 0xfb37, 0xfb37, 0xfb3d, 0xfb3d, 0xfb3f, 0xfb3f, 0xfb42, 0xfb42, 0xfb45, 0xfb45, 0xfbb2, 0xfbd2, 0xfd40, 0xfd4f, 0xfd90, 0xfd91, 0xfdc8, 0xfdcf, 0xfdfd, 0xfdff, 0xfe10, 0xfe1f, 0xfe24, 0xfe2f, 0xfe47, 0xfe48, 0xfe53, 0xfe53, 0xfe67, 0xfe67, 0xfe6c, 0xfe6f, 0xfe75, 0xfe75, 0xfefd, 0xfefe, 0xff00, 0xff00, 0xffbf, 0xffc1, 0xffc8, 0xffc9, 0xffd0, 0xffd1, 0xffd8, 0xffd9, 0xffdd, 0xffdf, 0xffe7, 0xffe7, 0xffef, 0xfff8, 0x10000, 0x102ff, 0x1031f, 0x1031f, 0x10324, 0x1032f, 0x1034b, 0x103ff, 0x10426, 0x10427, 0x1044e, 0x1cfff, 0x1d0f6, 0x1d0ff, 0x1d127, 0x1d129, 0x1d1de, 0x1d3ff, 0x1d455, 0x1d455, 0x1d49d, 0x1d49d, 0x1d4a0, 0x1d4a1, 0x1d4a3, 0x1d4a4, 0x1d4a7, 0x1d4a8, 0x1d4ad, 0x1d4ad, 0x1d4ba, 0x1d4ba, 0x1d4bc, 0x1d4bc, 0x1d4c1, 0x1d4c1, 0x1d4c4, 0x1d4c4, 0x1d506, 0x1d506, 0x1d50b, 0x1d50c, 0x1d515, 0x1d515, 0x1d51d, 0x1d51d, 0x1d53a, 0x1d53a, 0x1d53f, 0x1d53f, 0x1d545, 0x1d545, 0x1d547, 0x1d549, 0x1d551, 0x1d551, 0x1d6a4, 0x1d6a7, 0x1d7ca, 0x1d7cd, 0x1d800, 0x1fffd, 0x2a6d7, 0x2f7ff, 0x2fa1e, 0x2fffd, 0x30000, 0x3fffd, 0x40000, 0x4fffd, 0x50000, 0x5fffd, 0x60000, 0x6fffd, 0x70000, 0x7fffd, 0x80000, 0x8fffd, 0x90000, 0x9fffd, 0xa0000, 0xafffd, 0xb0000, 0xbfffd, 0xc0000, 0xcfffd, 0xd0000, 0xdfffd, 0xe0000, 0xe0000, 0xe0002, 0xe001f, 0xe0080, 0xefffd]; // prettier-ignore-end
 
-const isUnassignedCodePoint = character => inRange(character, unassigned_code_points);
-/* eslint-disable prettier/prettier */
+const isUnassignedCodePoint = character => inRange(character, unassigned_code_points); // prettier-ignore-start
 
 /**
  * B.1 Commonly mapped to nothing
@@ -457,11 +495,9 @@ const isUnassignedCodePoint = character => inRange(character, unassigned_code_po
  */
 
 
-const commonly_mapped_to_nothing = [0x00ad, 0x00ad, 0x034f, 0x034f, 0x1806, 0x1806, 0x180b, 0x180b, 0x180c, 0x180c, 0x180d, 0x180d, 0x200b, 0x200b, 0x200c, 0x200c, 0x200d, 0x200d, 0x2060, 0x2060, 0xfe00, 0xfe00, 0xfe01, 0xfe01, 0xfe02, 0xfe02, 0xfe03, 0xfe03, 0xfe04, 0xfe04, 0xfe05, 0xfe05, 0xfe06, 0xfe06, 0xfe07, 0xfe07, 0xfe08, 0xfe08, 0xfe09, 0xfe09, 0xfe0a, 0xfe0a, 0xfe0b, 0xfe0b, 0xfe0c, 0xfe0c, 0xfe0d, 0xfe0d, 0xfe0e, 0xfe0e, 0xfe0f, 0xfe0f, 0xfeff, 0xfeff];
-/* eslint-enable */
+const commonly_mapped_to_nothing = [0x00ad, 0x00ad, 0x034f, 0x034f, 0x1806, 0x1806, 0x180b, 0x180b, 0x180c, 0x180c, 0x180d, 0x180d, 0x200b, 0x200b, 0x200c, 0x200c, 0x200d, 0x200d, 0x2060, 0x2060, 0xfe00, 0xfe00, 0xfe01, 0xfe01, 0xfe02, 0xfe02, 0xfe03, 0xfe03, 0xfe04, 0xfe04, 0xfe05, 0xfe05, 0xfe06, 0xfe06, 0xfe07, 0xfe07, 0xfe08, 0xfe08, 0xfe09, 0xfe09, 0xfe0a, 0xfe0a, 0xfe0b, 0xfe0b, 0xfe0c, 0xfe0c, 0xfe0d, 0xfe0d, 0xfe0e, 0xfe0e, 0xfe0f, 0xfe0f, 0xfeff, 0xfeff]; // prettier-ignore-end
 
-const isCommonlyMappedToNothing = character => inRange(character, commonly_mapped_to_nothing);
-/* eslint-disable prettier/prettier */
+const isCommonlyMappedToNothing = character => inRange(character, commonly_mapped_to_nothing); // prettier-ignore-start
 
 /**
  * C.1.2 Non-ASCII space characters
@@ -503,11 +539,9 @@ const non_ASCII_space_characters = [0x00a0, 0x00a0
 /* MEDIUM MATHEMATICAL SPACE */
 , 0x3000, 0x3000
 /* IDEOGRAPHIC SPACE */
-];
-/* eslint-enable */
+]; // prettier-ignore-end
 
-const isNonASCIISpaceCharacter = character => inRange(character, non_ASCII_space_characters);
-/* eslint-disable prettier/prettier */
+const isNonASCIISpaceCharacter = character => inRange(character, non_ASCII_space_characters); // prettier-ignore-start
 
 
 const non_ASCII_controls_characters = [
@@ -688,11 +722,9 @@ const prohibited_characters = [
 /* [PRIVATE USE, PLANE 15] */
 , 0x100000, 0x10fffd
 /* [PRIVATE USE, PLANE 16] */
-];
-/* eslint-enable */
+]; // prettier-ignore-end
 
-const isProhibitedCharacter = character => inRange(character, non_ASCII_space_characters) || inRange(character, prohibited_characters) || inRange(character, non_ASCII_controls_characters) || inRange(character, non_character_codepoints);
-/* eslint-disable prettier/prettier */
+const isProhibitedCharacter = character => inRange(character, non_ASCII_space_characters) || inRange(character, prohibited_characters) || inRange(character, non_ASCII_controls_characters) || inRange(character, non_character_codepoints); // prettier-ignore-start
 
 /**
  * D.1 Characters with bidirectional property "R" or "AL"
@@ -700,11 +732,9 @@ const isProhibitedCharacter = character => inRange(character, non_ASCII_space_ch
  */
 
 
-const bidirectional_r_al = [0x05be, 0x05be, 0x05c0, 0x05c0, 0x05c3, 0x05c3, 0x05d0, 0x05ea, 0x05f0, 0x05f4, 0x061b, 0x061b, 0x061f, 0x061f, 0x0621, 0x063a, 0x0640, 0x064a, 0x066d, 0x066f, 0x0671, 0x06d5, 0x06dd, 0x06dd, 0x06e5, 0x06e6, 0x06fa, 0x06fe, 0x0700, 0x070d, 0x0710, 0x0710, 0x0712, 0x072c, 0x0780, 0x07a5, 0x07b1, 0x07b1, 0x200f, 0x200f, 0xfb1d, 0xfb1d, 0xfb1f, 0xfb28, 0xfb2a, 0xfb36, 0xfb38, 0xfb3c, 0xfb3e, 0xfb3e, 0xfb40, 0xfb41, 0xfb43, 0xfb44, 0xfb46, 0xfbb1, 0xfbd3, 0xfd3d, 0xfd50, 0xfd8f, 0xfd92, 0xfdc7, 0xfdf0, 0xfdfc, 0xfe70, 0xfe74, 0xfe76, 0xfefc];
-/* eslint-enable */
+const bidirectional_r_al = [0x05be, 0x05be, 0x05c0, 0x05c0, 0x05c3, 0x05c3, 0x05d0, 0x05ea, 0x05f0, 0x05f4, 0x061b, 0x061b, 0x061f, 0x061f, 0x0621, 0x063a, 0x0640, 0x064a, 0x066d, 0x066f, 0x0671, 0x06d5, 0x06dd, 0x06dd, 0x06e5, 0x06e6, 0x06fa, 0x06fe, 0x0700, 0x070d, 0x0710, 0x0710, 0x0712, 0x072c, 0x0780, 0x07a5, 0x07b1, 0x07b1, 0x200f, 0x200f, 0xfb1d, 0xfb1d, 0xfb1f, 0xfb28, 0xfb2a, 0xfb36, 0xfb38, 0xfb3c, 0xfb3e, 0xfb3e, 0xfb40, 0xfb41, 0xfb43, 0xfb44, 0xfb46, 0xfbb1, 0xfbd3, 0xfd3d, 0xfd50, 0xfd8f, 0xfd92, 0xfdc7, 0xfdf0, 0xfdfc, 0xfe70, 0xfe74, 0xfe76, 0xfefc]; // prettier-ignore-end
 
-const isBidirectionalRAL = character => inRange(character, bidirectional_r_al);
-/* eslint-disable prettier/prettier */
+const isBidirectionalRAL = character => inRange(character, bidirectional_r_al); // prettier-ignore-start
 
 /**
  * D.2 Characters with bidirectional property "L"
@@ -712,8 +742,7 @@ const isBidirectionalRAL = character => inRange(character, bidirectional_r_al);
  */
 
 
-const bidirectional_l = [0x0041, 0x005a, 0x0061, 0x007a, 0x00aa, 0x00aa, 0x00b5, 0x00b5, 0x00ba, 0x00ba, 0x00c0, 0x00d6, 0x00d8, 0x00f6, 0x00f8, 0x0220, 0x0222, 0x0233, 0x0250, 0x02ad, 0x02b0, 0x02b8, 0x02bb, 0x02c1, 0x02d0, 0x02d1, 0x02e0, 0x02e4, 0x02ee, 0x02ee, 0x037a, 0x037a, 0x0386, 0x0386, 0x0388, 0x038a, 0x038c, 0x038c, 0x038e, 0x03a1, 0x03a3, 0x03ce, 0x03d0, 0x03f5, 0x0400, 0x0482, 0x048a, 0x04ce, 0x04d0, 0x04f5, 0x04f8, 0x04f9, 0x0500, 0x050f, 0x0531, 0x0556, 0x0559, 0x055f, 0x0561, 0x0587, 0x0589, 0x0589, 0x0903, 0x0903, 0x0905, 0x0939, 0x093d, 0x0940, 0x0949, 0x094c, 0x0950, 0x0950, 0x0958, 0x0961, 0x0964, 0x0970, 0x0982, 0x0983, 0x0985, 0x098c, 0x098f, 0x0990, 0x0993, 0x09a8, 0x09aa, 0x09b0, 0x09b2, 0x09b2, 0x09b6, 0x09b9, 0x09be, 0x09c0, 0x09c7, 0x09c8, 0x09cb, 0x09cc, 0x09d7, 0x09d7, 0x09dc, 0x09dd, 0x09df, 0x09e1, 0x09e6, 0x09f1, 0x09f4, 0x09fa, 0x0a05, 0x0a0a, 0x0a0f, 0x0a10, 0x0a13, 0x0a28, 0x0a2a, 0x0a30, 0x0a32, 0x0a33, 0x0a35, 0x0a36, 0x0a38, 0x0a39, 0x0a3e, 0x0a40, 0x0a59, 0x0a5c, 0x0a5e, 0x0a5e, 0x0a66, 0x0a6f, 0x0a72, 0x0a74, 0x0a83, 0x0a83, 0x0a85, 0x0a8b, 0x0a8d, 0x0a8d, 0x0a8f, 0x0a91, 0x0a93, 0x0aa8, 0x0aaa, 0x0ab0, 0x0ab2, 0x0ab3, 0x0ab5, 0x0ab9, 0x0abd, 0x0ac0, 0x0ac9, 0x0ac9, 0x0acb, 0x0acc, 0x0ad0, 0x0ad0, 0x0ae0, 0x0ae0, 0x0ae6, 0x0aef, 0x0b02, 0x0b03, 0x0b05, 0x0b0c, 0x0b0f, 0x0b10, 0x0b13, 0x0b28, 0x0b2a, 0x0b30, 0x0b32, 0x0b33, 0x0b36, 0x0b39, 0x0b3d, 0x0b3e, 0x0b40, 0x0b40, 0x0b47, 0x0b48, 0x0b4b, 0x0b4c, 0x0b57, 0x0b57, 0x0b5c, 0x0b5d, 0x0b5f, 0x0b61, 0x0b66, 0x0b70, 0x0b83, 0x0b83, 0x0b85, 0x0b8a, 0x0b8e, 0x0b90, 0x0b92, 0x0b95, 0x0b99, 0x0b9a, 0x0b9c, 0x0b9c, 0x0b9e, 0x0b9f, 0x0ba3, 0x0ba4, 0x0ba8, 0x0baa, 0x0bae, 0x0bb5, 0x0bb7, 0x0bb9, 0x0bbe, 0x0bbf, 0x0bc1, 0x0bc2, 0x0bc6, 0x0bc8, 0x0bca, 0x0bcc, 0x0bd7, 0x0bd7, 0x0be7, 0x0bf2, 0x0c01, 0x0c03, 0x0c05, 0x0c0c, 0x0c0e, 0x0c10, 0x0c12, 0x0c28, 0x0c2a, 0x0c33, 0x0c35, 0x0c39, 0x0c41, 0x0c44, 0x0c60, 0x0c61, 0x0c66, 0x0c6f, 0x0c82, 0x0c83, 0x0c85, 0x0c8c, 0x0c8e, 0x0c90, 0x0c92, 0x0ca8, 0x0caa, 0x0cb3, 0x0cb5, 0x0cb9, 0x0cbe, 0x0cbe, 0x0cc0, 0x0cc4, 0x0cc7, 0x0cc8, 0x0cca, 0x0ccb, 0x0cd5, 0x0cd6, 0x0cde, 0x0cde, 0x0ce0, 0x0ce1, 0x0ce6, 0x0cef, 0x0d02, 0x0d03, 0x0d05, 0x0d0c, 0x0d0e, 0x0d10, 0x0d12, 0x0d28, 0x0d2a, 0x0d39, 0x0d3e, 0x0d40, 0x0d46, 0x0d48, 0x0d4a, 0x0d4c, 0x0d57, 0x0d57, 0x0d60, 0x0d61, 0x0d66, 0x0d6f, 0x0d82, 0x0d83, 0x0d85, 0x0d96, 0x0d9a, 0x0db1, 0x0db3, 0x0dbb, 0x0dbd, 0x0dbd, 0x0dc0, 0x0dc6, 0x0dcf, 0x0dd1, 0x0dd8, 0x0ddf, 0x0df2, 0x0df4, 0x0e01, 0x0e30, 0x0e32, 0x0e33, 0x0e40, 0x0e46, 0x0e4f, 0x0e5b, 0x0e81, 0x0e82, 0x0e84, 0x0e84, 0x0e87, 0x0e88, 0x0e8a, 0x0e8a, 0x0e8d, 0x0e8d, 0x0e94, 0x0e97, 0x0e99, 0x0e9f, 0x0ea1, 0x0ea3, 0x0ea5, 0x0ea5, 0x0ea7, 0x0ea7, 0x0eaa, 0x0eab, 0x0ead, 0x0eb0, 0x0eb2, 0x0eb3, 0x0ebd, 0x0ebd, 0x0ec0, 0x0ec4, 0x0ec6, 0x0ec6, 0x0ed0, 0x0ed9, 0x0edc, 0x0edd, 0x0f00, 0x0f17, 0x0f1a, 0x0f34, 0x0f36, 0x0f36, 0x0f38, 0x0f38, 0x0f3e, 0x0f47, 0x0f49, 0x0f6a, 0x0f7f, 0x0f7f, 0x0f85, 0x0f85, 0x0f88, 0x0f8b, 0x0fbe, 0x0fc5, 0x0fc7, 0x0fcc, 0x0fcf, 0x0fcf, 0x1000, 0x1021, 0x1023, 0x1027, 0x1029, 0x102a, 0x102c, 0x102c, 0x1031, 0x1031, 0x1038, 0x1038, 0x1040, 0x1057, 0x10a0, 0x10c5, 0x10d0, 0x10f8, 0x10fb, 0x10fb, 0x1100, 0x1159, 0x115f, 0x11a2, 0x11a8, 0x11f9, 0x1200, 0x1206, 0x1208, 0x1246, 0x1248, 0x1248, 0x124a, 0x124d, 0x1250, 0x1256, 0x1258, 0x1258, 0x125a, 0x125d, 0x1260, 0x1286, 0x1288, 0x1288, 0x128a, 0x128d, 0x1290, 0x12ae, 0x12b0, 0x12b0, 0x12b2, 0x12b5, 0x12b8, 0x12be, 0x12c0, 0x12c0, 0x12c2, 0x12c5, 0x12c8, 0x12ce, 0x12d0, 0x12d6, 0x12d8, 0x12ee, 0x12f0, 0x130e, 0x1310, 0x1310, 0x1312, 0x1315, 0x1318, 0x131e, 0x1320, 0x1346, 0x1348, 0x135a, 0x1361, 0x137c, 0x13a0, 0x13f4, 0x1401, 0x1676, 0x1681, 0x169a, 0x16a0, 0x16f0, 0x1700, 0x170c, 0x170e, 0x1711, 0x1720, 0x1731, 0x1735, 0x1736, 0x1740, 0x1751, 0x1760, 0x176c, 0x176e, 0x1770, 0x1780, 0x17b6, 0x17be, 0x17c5, 0x17c7, 0x17c8, 0x17d4, 0x17da, 0x17dc, 0x17dc, 0x17e0, 0x17e9, 0x1810, 0x1819, 0x1820, 0x1877, 0x1880, 0x18a8, 0x1e00, 0x1e9b, 0x1ea0, 0x1ef9, 0x1f00, 0x1f15, 0x1f18, 0x1f1d, 0x1f20, 0x1f45, 0x1f48, 0x1f4d, 0x1f50, 0x1f57, 0x1f59, 0x1f59, 0x1f5b, 0x1f5b, 0x1f5d, 0x1f5d, 0x1f5f, 0x1f7d, 0x1f80, 0x1fb4, 0x1fb6, 0x1fbc, 0x1fbe, 0x1fbe, 0x1fc2, 0x1fc4, 0x1fc6, 0x1fcc, 0x1fd0, 0x1fd3, 0x1fd6, 0x1fdb, 0x1fe0, 0x1fec, 0x1ff2, 0x1ff4, 0x1ff6, 0x1ffc, 0x200e, 0x200e, 0x2071, 0x2071, 0x207f, 0x207f, 0x2102, 0x2102, 0x2107, 0x2107, 0x210a, 0x2113, 0x2115, 0x2115, 0x2119, 0x211d, 0x2124, 0x2124, 0x2126, 0x2126, 0x2128, 0x2128, 0x212a, 0x212d, 0x212f, 0x2131, 0x2133, 0x2139, 0x213d, 0x213f, 0x2145, 0x2149, 0x2160, 0x2183, 0x2336, 0x237a, 0x2395, 0x2395, 0x249c, 0x24e9, 0x3005, 0x3007, 0x3021, 0x3029, 0x3031, 0x3035, 0x3038, 0x303c, 0x3041, 0x3096, 0x309d, 0x309f, 0x30a1, 0x30fa, 0x30fc, 0x30ff, 0x3105, 0x312c, 0x3131, 0x318e, 0x3190, 0x31b7, 0x31f0, 0x321c, 0x3220, 0x3243, 0x3260, 0x327b, 0x327f, 0x32b0, 0x32c0, 0x32cb, 0x32d0, 0x32fe, 0x3300, 0x3376, 0x337b, 0x33dd, 0x33e0, 0x33fe, 0x3400, 0x4db5, 0x4e00, 0x9fa5, 0xa000, 0xa48c, 0xac00, 0xd7a3, 0xd800, 0xfa2d, 0xfa30, 0xfa6a, 0xfb00, 0xfb06, 0xfb13, 0xfb17, 0xff21, 0xff3a, 0xff41, 0xff5a, 0xff66, 0xffbe, 0xffc2, 0xffc7, 0xffca, 0xffcf, 0xffd2, 0xffd7, 0xffda, 0xffdc, 0x10300, 0x1031e, 0x10320, 0x10323, 0x10330, 0x1034a, 0x10400, 0x10425, 0x10428, 0x1044d, 0x1d000, 0x1d0f5, 0x1d100, 0x1d126, 0x1d12a, 0x1d166, 0x1d16a, 0x1d172, 0x1d183, 0x1d184, 0x1d18c, 0x1d1a9, 0x1d1ae, 0x1d1dd, 0x1d400, 0x1d454, 0x1d456, 0x1d49c, 0x1d49e, 0x1d49f, 0x1d4a2, 0x1d4a2, 0x1d4a5, 0x1d4a6, 0x1d4a9, 0x1d4ac, 0x1d4ae, 0x1d4b9, 0x1d4bb, 0x1d4bb, 0x1d4bd, 0x1d4c0, 0x1d4c2, 0x1d4c3, 0x1d4c5, 0x1d505, 0x1d507, 0x1d50a, 0x1d50d, 0x1d514, 0x1d516, 0x1d51c, 0x1d51e, 0x1d539, 0x1d53b, 0x1d53e, 0x1d540, 0x1d544, 0x1d546, 0x1d546, 0x1d54a, 0x1d550, 0x1d552, 0x1d6a3, 0x1d6a8, 0x1d7c9, 0x20000, 0x2a6d6, 0x2f800, 0x2fa1d, 0xf0000, 0xffffd, 0x100000, 0x10fffd];
-/* eslint-enable */
+const bidirectional_l = [0x0041, 0x005a, 0x0061, 0x007a, 0x00aa, 0x00aa, 0x00b5, 0x00b5, 0x00ba, 0x00ba, 0x00c0, 0x00d6, 0x00d8, 0x00f6, 0x00f8, 0x0220, 0x0222, 0x0233, 0x0250, 0x02ad, 0x02b0, 0x02b8, 0x02bb, 0x02c1, 0x02d0, 0x02d1, 0x02e0, 0x02e4, 0x02ee, 0x02ee, 0x037a, 0x037a, 0x0386, 0x0386, 0x0388, 0x038a, 0x038c, 0x038c, 0x038e, 0x03a1, 0x03a3, 0x03ce, 0x03d0, 0x03f5, 0x0400, 0x0482, 0x048a, 0x04ce, 0x04d0, 0x04f5, 0x04f8, 0x04f9, 0x0500, 0x050f, 0x0531, 0x0556, 0x0559, 0x055f, 0x0561, 0x0587, 0x0589, 0x0589, 0x0903, 0x0903, 0x0905, 0x0939, 0x093d, 0x0940, 0x0949, 0x094c, 0x0950, 0x0950, 0x0958, 0x0961, 0x0964, 0x0970, 0x0982, 0x0983, 0x0985, 0x098c, 0x098f, 0x0990, 0x0993, 0x09a8, 0x09aa, 0x09b0, 0x09b2, 0x09b2, 0x09b6, 0x09b9, 0x09be, 0x09c0, 0x09c7, 0x09c8, 0x09cb, 0x09cc, 0x09d7, 0x09d7, 0x09dc, 0x09dd, 0x09df, 0x09e1, 0x09e6, 0x09f1, 0x09f4, 0x09fa, 0x0a05, 0x0a0a, 0x0a0f, 0x0a10, 0x0a13, 0x0a28, 0x0a2a, 0x0a30, 0x0a32, 0x0a33, 0x0a35, 0x0a36, 0x0a38, 0x0a39, 0x0a3e, 0x0a40, 0x0a59, 0x0a5c, 0x0a5e, 0x0a5e, 0x0a66, 0x0a6f, 0x0a72, 0x0a74, 0x0a83, 0x0a83, 0x0a85, 0x0a8b, 0x0a8d, 0x0a8d, 0x0a8f, 0x0a91, 0x0a93, 0x0aa8, 0x0aaa, 0x0ab0, 0x0ab2, 0x0ab3, 0x0ab5, 0x0ab9, 0x0abd, 0x0ac0, 0x0ac9, 0x0ac9, 0x0acb, 0x0acc, 0x0ad0, 0x0ad0, 0x0ae0, 0x0ae0, 0x0ae6, 0x0aef, 0x0b02, 0x0b03, 0x0b05, 0x0b0c, 0x0b0f, 0x0b10, 0x0b13, 0x0b28, 0x0b2a, 0x0b30, 0x0b32, 0x0b33, 0x0b36, 0x0b39, 0x0b3d, 0x0b3e, 0x0b40, 0x0b40, 0x0b47, 0x0b48, 0x0b4b, 0x0b4c, 0x0b57, 0x0b57, 0x0b5c, 0x0b5d, 0x0b5f, 0x0b61, 0x0b66, 0x0b70, 0x0b83, 0x0b83, 0x0b85, 0x0b8a, 0x0b8e, 0x0b90, 0x0b92, 0x0b95, 0x0b99, 0x0b9a, 0x0b9c, 0x0b9c, 0x0b9e, 0x0b9f, 0x0ba3, 0x0ba4, 0x0ba8, 0x0baa, 0x0bae, 0x0bb5, 0x0bb7, 0x0bb9, 0x0bbe, 0x0bbf, 0x0bc1, 0x0bc2, 0x0bc6, 0x0bc8, 0x0bca, 0x0bcc, 0x0bd7, 0x0bd7, 0x0be7, 0x0bf2, 0x0c01, 0x0c03, 0x0c05, 0x0c0c, 0x0c0e, 0x0c10, 0x0c12, 0x0c28, 0x0c2a, 0x0c33, 0x0c35, 0x0c39, 0x0c41, 0x0c44, 0x0c60, 0x0c61, 0x0c66, 0x0c6f, 0x0c82, 0x0c83, 0x0c85, 0x0c8c, 0x0c8e, 0x0c90, 0x0c92, 0x0ca8, 0x0caa, 0x0cb3, 0x0cb5, 0x0cb9, 0x0cbe, 0x0cbe, 0x0cc0, 0x0cc4, 0x0cc7, 0x0cc8, 0x0cca, 0x0ccb, 0x0cd5, 0x0cd6, 0x0cde, 0x0cde, 0x0ce0, 0x0ce1, 0x0ce6, 0x0cef, 0x0d02, 0x0d03, 0x0d05, 0x0d0c, 0x0d0e, 0x0d10, 0x0d12, 0x0d28, 0x0d2a, 0x0d39, 0x0d3e, 0x0d40, 0x0d46, 0x0d48, 0x0d4a, 0x0d4c, 0x0d57, 0x0d57, 0x0d60, 0x0d61, 0x0d66, 0x0d6f, 0x0d82, 0x0d83, 0x0d85, 0x0d96, 0x0d9a, 0x0db1, 0x0db3, 0x0dbb, 0x0dbd, 0x0dbd, 0x0dc0, 0x0dc6, 0x0dcf, 0x0dd1, 0x0dd8, 0x0ddf, 0x0df2, 0x0df4, 0x0e01, 0x0e30, 0x0e32, 0x0e33, 0x0e40, 0x0e46, 0x0e4f, 0x0e5b, 0x0e81, 0x0e82, 0x0e84, 0x0e84, 0x0e87, 0x0e88, 0x0e8a, 0x0e8a, 0x0e8d, 0x0e8d, 0x0e94, 0x0e97, 0x0e99, 0x0e9f, 0x0ea1, 0x0ea3, 0x0ea5, 0x0ea5, 0x0ea7, 0x0ea7, 0x0eaa, 0x0eab, 0x0ead, 0x0eb0, 0x0eb2, 0x0eb3, 0x0ebd, 0x0ebd, 0x0ec0, 0x0ec4, 0x0ec6, 0x0ec6, 0x0ed0, 0x0ed9, 0x0edc, 0x0edd, 0x0f00, 0x0f17, 0x0f1a, 0x0f34, 0x0f36, 0x0f36, 0x0f38, 0x0f38, 0x0f3e, 0x0f47, 0x0f49, 0x0f6a, 0x0f7f, 0x0f7f, 0x0f85, 0x0f85, 0x0f88, 0x0f8b, 0x0fbe, 0x0fc5, 0x0fc7, 0x0fcc, 0x0fcf, 0x0fcf, 0x1000, 0x1021, 0x1023, 0x1027, 0x1029, 0x102a, 0x102c, 0x102c, 0x1031, 0x1031, 0x1038, 0x1038, 0x1040, 0x1057, 0x10a0, 0x10c5, 0x10d0, 0x10f8, 0x10fb, 0x10fb, 0x1100, 0x1159, 0x115f, 0x11a2, 0x11a8, 0x11f9, 0x1200, 0x1206, 0x1208, 0x1246, 0x1248, 0x1248, 0x124a, 0x124d, 0x1250, 0x1256, 0x1258, 0x1258, 0x125a, 0x125d, 0x1260, 0x1286, 0x1288, 0x1288, 0x128a, 0x128d, 0x1290, 0x12ae, 0x12b0, 0x12b0, 0x12b2, 0x12b5, 0x12b8, 0x12be, 0x12c0, 0x12c0, 0x12c2, 0x12c5, 0x12c8, 0x12ce, 0x12d0, 0x12d6, 0x12d8, 0x12ee, 0x12f0, 0x130e, 0x1310, 0x1310, 0x1312, 0x1315, 0x1318, 0x131e, 0x1320, 0x1346, 0x1348, 0x135a, 0x1361, 0x137c, 0x13a0, 0x13f4, 0x1401, 0x1676, 0x1681, 0x169a, 0x16a0, 0x16f0, 0x1700, 0x170c, 0x170e, 0x1711, 0x1720, 0x1731, 0x1735, 0x1736, 0x1740, 0x1751, 0x1760, 0x176c, 0x176e, 0x1770, 0x1780, 0x17b6, 0x17be, 0x17c5, 0x17c7, 0x17c8, 0x17d4, 0x17da, 0x17dc, 0x17dc, 0x17e0, 0x17e9, 0x1810, 0x1819, 0x1820, 0x1877, 0x1880, 0x18a8, 0x1e00, 0x1e9b, 0x1ea0, 0x1ef9, 0x1f00, 0x1f15, 0x1f18, 0x1f1d, 0x1f20, 0x1f45, 0x1f48, 0x1f4d, 0x1f50, 0x1f57, 0x1f59, 0x1f59, 0x1f5b, 0x1f5b, 0x1f5d, 0x1f5d, 0x1f5f, 0x1f7d, 0x1f80, 0x1fb4, 0x1fb6, 0x1fbc, 0x1fbe, 0x1fbe, 0x1fc2, 0x1fc4, 0x1fc6, 0x1fcc, 0x1fd0, 0x1fd3, 0x1fd6, 0x1fdb, 0x1fe0, 0x1fec, 0x1ff2, 0x1ff4, 0x1ff6, 0x1ffc, 0x200e, 0x200e, 0x2071, 0x2071, 0x207f, 0x207f, 0x2102, 0x2102, 0x2107, 0x2107, 0x210a, 0x2113, 0x2115, 0x2115, 0x2119, 0x211d, 0x2124, 0x2124, 0x2126, 0x2126, 0x2128, 0x2128, 0x212a, 0x212d, 0x212f, 0x2131, 0x2133, 0x2139, 0x213d, 0x213f, 0x2145, 0x2149, 0x2160, 0x2183, 0x2336, 0x237a, 0x2395, 0x2395, 0x249c, 0x24e9, 0x3005, 0x3007, 0x3021, 0x3029, 0x3031, 0x3035, 0x3038, 0x303c, 0x3041, 0x3096, 0x309d, 0x309f, 0x30a1, 0x30fa, 0x30fc, 0x30ff, 0x3105, 0x312c, 0x3131, 0x318e, 0x3190, 0x31b7, 0x31f0, 0x321c, 0x3220, 0x3243, 0x3260, 0x327b, 0x327f, 0x32b0, 0x32c0, 0x32cb, 0x32d0, 0x32fe, 0x3300, 0x3376, 0x337b, 0x33dd, 0x33e0, 0x33fe, 0x3400, 0x4db5, 0x4e00, 0x9fa5, 0xa000, 0xa48c, 0xac00, 0xd7a3, 0xd800, 0xfa2d, 0xfa30, 0xfa6a, 0xfb00, 0xfb06, 0xfb13, 0xfb17, 0xff21, 0xff3a, 0xff41, 0xff5a, 0xff66, 0xffbe, 0xffc2, 0xffc7, 0xffca, 0xffcf, 0xffd2, 0xffd7, 0xffda, 0xffdc, 0x10300, 0x1031e, 0x10320, 0x10323, 0x10330, 0x1034a, 0x10400, 0x10425, 0x10428, 0x1044d, 0x1d000, 0x1d0f5, 0x1d100, 0x1d126, 0x1d12a, 0x1d166, 0x1d16a, 0x1d172, 0x1d183, 0x1d184, 0x1d18c, 0x1d1a9, 0x1d1ae, 0x1d1dd, 0x1d400, 0x1d454, 0x1d456, 0x1d49c, 0x1d49e, 0x1d49f, 0x1d4a2, 0x1d4a2, 0x1d4a5, 0x1d4a6, 0x1d4a9, 0x1d4ac, 0x1d4ae, 0x1d4b9, 0x1d4bb, 0x1d4bb, 0x1d4bd, 0x1d4c0, 0x1d4c2, 0x1d4c3, 0x1d4c5, 0x1d505, 0x1d507, 0x1d50a, 0x1d50d, 0x1d514, 0x1d516, 0x1d51c, 0x1d51e, 0x1d539, 0x1d53b, 0x1d53e, 0x1d540, 0x1d544, 0x1d546, 0x1d546, 0x1d54a, 0x1d550, 0x1d552, 0x1d6a3, 0x1d6a8, 0x1d7c9, 0x20000, 0x2a6d6, 0x2f800, 0x2fa1d, 0xf0000, 0xffffd, 0x100000, 0x10fffd]; // prettier-ignore-end
 
 const isBidirectionalL = character => inRange(character, bidirectional_l);
 
@@ -842,11 +871,12 @@ class PDFSecurity {
     let infoStr = `${info.CreationDate.getTime()}\n`;
 
     for (let key in info) {
+      // eslint-disable-next-line no-prototype-builtins
       if (!info.hasOwnProperty(key)) {
         continue;
       }
 
-      infoStr += `${key}: ${info[key]}\n`;
+      infoStr += `${key}: ${info[key].valueOf()}\n`;
     }
 
     return wordArrayToBuffer(CryptoJS.MD5(infoStr));
@@ -977,7 +1007,7 @@ class PDFSecurity {
 
   _setupEncryptionV5(encDict, options) {
     this.keyBits = 256;
-    const permissions = getPermissionsR3(options);
+    const permissions = getPermissionsR3(options.permissions);
     const processedUserPassword = processPasswordR5(options.userPassword);
     const processedOwnerPassword = options.ownerPassword ? processPasswordR5(options.ownerPassword) : processedUserPassword;
     this.encryptionKey = getEncryptionKeyR5(PDFSecurity.generateRandomWordArray);
@@ -1209,7 +1239,7 @@ function getEncryptedPermissionsR5(permissions, encryptionKey, generateRandomWor
 }
 
 function processPasswordR2R3R4(password = '') {
-  const out = new Buffer(32);
+  const out = Buffer.alloc(32);
   const length = password.length;
   let index = 0;
 
@@ -1235,7 +1265,7 @@ function processPasswordR2R3R4(password = '') {
 function processPasswordR5(password = '') {
   password = unescape(encodeURIComponent(saslprep(password)));
   const length = Math.min(127, password.length);
-  const out = new Buffer(length);
+  const out = Buffer.alloc(length);
 
   for (let i = 0; i < length; i++) {
     out[i] = password.charCodeAt(i);
@@ -2603,7 +2633,7 @@ const characters = `\
 .notdef       .notdef        .notdef        .notdef
 .notdef       .notdef        .notdef        .notdef
 .notdef       .notdef        .notdef        .notdef
-
+  
 space         exclam         quotedbl       numbersign
 dollar        percent        ampersand      quotesingle
 parenleft     parenright     asterisk       plus
@@ -2612,7 +2642,7 @@ zero          one            two            three
 four          five           six            seven
 eight         nine           colon          semicolon
 less          equal          greater        question
-
+  
 at            A              B              C
 D             E              F              G
 H             I              J              K
@@ -2621,7 +2651,7 @@ P             Q              R              S
 T             U              V              W
 X             Y              Z              bracketleft
 backslash     bracketright   asciicircum    underscore
-
+  
 grave         a              b              c
 d             e              f              g
 h             i              j              k
@@ -2630,7 +2660,7 @@ p             q              r              s
 t             u              v              w
 x             y              z              braceleft
 bar           braceright     asciitilde     .notdef
-
+  
 Euro          .notdef        quotesinglbase florin
 quotedblbase  ellipsis       dagger         daggerdbl
 circumflex    perthousand    Scaron         guilsinglleft
@@ -2639,7 +2669,7 @@ OE            .notdef        Zcaron         .notdef
 quotedblright bullet         endash         emdash
 tilde         trademark      scaron         guilsinglright
 oe            .notdef        zcaron         ydieresis
-
+  
 space         exclamdown     cent           sterling
 currency      yen            brokenbar      section
 dieresis      copyright      ordfeminine    guillemotleft
@@ -2648,7 +2678,7 @@ degree        plusminus      twosuperior    threesuperior
 acute         mu             paragraph      periodcentered
 cedilla       onesuperior    ordmasculine   guillemotright
 onequarter    onehalf        threequarters  questiondown
-
+  
 Agrave        Aacute         Acircumflex    Atilde
 Adieresis     Aring          AE             Ccedilla
 Egrave        Eacute         Ecircumflex    Edieresis
@@ -2657,7 +2687,7 @@ Eth           Ntilde         Ograve         Oacute
 Ocircumflex   Otilde         Odieresis      multiply
 Oslash        Ugrave         Uacute         Ucircumflex
 Udieresis     Yacute         Thorn          germandbls
-
+  
 agrave        aacute         acircumflex    atilde
 adieresis     aring          ae             ccedilla
 egrave        eacute         ecircumflex    edieresis
@@ -3118,10 +3148,10 @@ class EmbeddedFont extends PDFFont {
 
     if (this.font.head.macStyle.italic) {
       flags |= 1 << 6;
-    } // generate a tag (6 uppercase letters. 16 is the char code offset from '1' to 'A'. 74 will map to 'Z')
+    } // generate a tag (6 uppercase letters. 17 is the char code offset from '0' to 'A'. 73 will map to 'Z')
 
 
-    const tag = [1, 2, 3, 4, 5, 6].map(i => String.fromCharCode((this.id.charCodeAt(i) || 74) + 16)).join('');
+    const tag = [1, 2, 3, 4, 5, 6].map(i => String.fromCharCode((this.id.charCodeAt(i) || 73) + 17)).join('');
     const name = tag + '+' + this.font.postscriptName;
     const {
       bbox
@@ -3242,9 +3272,9 @@ class PDFFontFactory {
     if (Buffer.isBuffer(src)) {
       font = fontkit.create(src, family);
     } else if (src instanceof Uint8Array) {
-      font = fontkit.create(new Buffer(src), family);
+      font = fontkit.create(Buffer.from(src), family);
     } else if (src instanceof ArrayBuffer) {
-      font = fontkit.create(new Buffer(new Uint8Array(src)), family);
+      font = fontkit.create(Buffer.from(new Uint8Array(src)), family);
     }
 
     if (font == null) {
@@ -3568,7 +3598,7 @@ class LineWrapper extends events.EventEmitter {
 
           buffer = buffer.replace(/\s+$/, '');
           textWidth = this.wordWidth(buffer + this.ellipsis); // remove characters from the buffer until the ellipsis fits
-          // to avoid inifinite loop need to stop while-loop if buffer is empty string
+          // to avoid infinite loop need to stop while-loop if buffer is empty string
 
           while (buffer && textWidth > this.lineWidth) {
             buffer = buffer.slice(0, -1).replace(/\s+$/, '');
@@ -3656,7 +3686,7 @@ class LineWrapper extends events.EventEmitter {
         return false;
       }
 
-      this.document.addPage();
+      this.document.continueOnNewPage();
       this.column = 1;
       this.startY = this.document.page.margins.top;
       this.maxY = this.document.page.maxY();
@@ -3721,7 +3751,13 @@ var TextMixin = {
 
     if (options.wordSpacing) {
       text = text.replace(/\s{2,}/g, ' ');
-    } // word wrapping
+    }
+
+    const addStructure = () => {
+      if (options.structParent) {
+        options.structParent.add(this.struct(options.structType || 'P', [this.markStructureContent(options.structType || 'P')]));
+      }
+    }; // word wrapping
 
 
     if (options.width) {
@@ -3730,6 +3766,7 @@ var TextMixin = {
       if (!wrapper) {
         wrapper = new LineWrapper(this, options);
         wrapper.on('line', lineCallback);
+        wrapper.on('firstLine', addStructure);
       }
 
       this._wrapper = options.continued ? wrapper : null;
@@ -3737,6 +3774,7 @@ var TextMixin = {
       wrapper.wrap(text, options); // render paragraphs as single lines
     } else {
       for (let line of text.split('\n')) {
+        addStructure();
         lineCallback(line, options);
       }
     }
@@ -3826,6 +3864,23 @@ var TextMixin = {
     level = 1;
     let i = 0;
     wrapper.on('firstLine', () => {
+      let item, itemType, labelType, bodyType;
+
+      if (options.structParent) {
+        if (options.structTypes) {
+          [itemType, labelType, bodyType] = options.structTypes;
+        } else {
+          [itemType, labelType, bodyType] = ['LI', 'Lbl', 'LBody'];
+        }
+      }
+
+      if (itemType) {
+        item = this.struct(itemType);
+        options.structParent.add(item);
+      } else if (options.structParent) {
+        item = options.structParent;
+      }
+
       let l;
 
       if ((l = levels[i++]) !== level) {
@@ -3835,15 +3890,31 @@ var TextMixin = {
         level = l;
       }
 
+      if (item && (labelType || bodyType)) {
+        item.add(this.struct(labelType || bodyType, [this.markStructureContent(labelType || bodyType)]));
+      }
+
       switch (listType) {
         case 'bullet':
           this.circle(this.x - indent + r, this.y + midLine, r);
-          return this.fill();
+          this.fill();
+          break;
 
         case 'numbered':
         case 'lettered':
           var text = label(numbers[i - 1]);
-          return this._fragment(text, this.x - indent, this.y, options);
+
+          this._fragment(text, this.x - indent, this.y, options);
+
+          break;
+      }
+
+      if (item && labelType && bodyType) {
+        item.add(this.struct(bodyType, [this.markStructureContent(bodyType)]));
+      }
+
+      if (item && item !== options.structParent) {
+        item.end();
       }
     });
     wrapper.on('sectionStart', () => {
@@ -4293,7 +4364,7 @@ class PNGImage {
     } else {
       // embed the color palette in the PDF as an object stream
       const palette = this.document.ref();
-      palette.end(new Buffer(this.image.palette)); // build the color space array for the image
+      palette.end(Buffer.from(this.image.palette)); // build the color space array for the image
 
       this.obj.data['ColorSpace'] = ['Indexed', 'DeviceRGB', this.image.palette.length / 3 - 1, palette];
     } // For PNG color types 0, 2 and 3, the transparency data is stored in
@@ -4366,8 +4437,8 @@ class PNGImage {
       let a, p;
       const colorCount = this.image.colors;
       const pixelCount = this.width * this.height;
-      const imgData = new Buffer(pixelCount * colorCount);
-      const alphaChannel = new Buffer(pixelCount);
+      const imgData = Buffer.alloc(pixelCount * colorCount);
+      const alphaChannel = Buffer.alloc(pixelCount);
       let i = p = a = 0;
       const len = pixels.length; // For 16bit images copy only most significant byte (MSB) - PNG data is always stored in network byte order (MSB first)
 
@@ -4392,7 +4463,7 @@ class PNGImage {
   loadIndexedAlphaChannel() {
     const transparency = this.image.transparency.indexed;
     return this.image.decodePixels(pixels => {
-      const alphaChannel = new Buffer(this.width * this.height);
+      const alphaChannel = Buffer.alloc(this.width * this.height);
       let i = 0;
 
       for (let j = 0, end = pixels.length; j < end; j++) {
@@ -4425,12 +4496,12 @@ class PDFImage {
     if (Buffer.isBuffer(src)) {
       data = src;
     } else if (src instanceof ArrayBuffer) {
-      data = new Buffer(new Uint8Array(src));
+      data = Buffer.from(new Uint8Array(src));
     } else {
       let match;
 
       if (match = /^data:.+;base64,(.*)$/.exec(src)) {
-        data = new Buffer(match[1], 'base64');
+        data = Buffer.from(match[1], 'base64');
       } else {
         data = fs.readFileSync(src);
 
@@ -4726,6 +4797,23 @@ var AnnotationsMixin = {
     return this.annotate(x, y, w, h, options);
   },
 
+  fileAnnotation(x, y, w, h, file = {}, options = {}) {
+    // create hidden file
+    const filespec = this.file(file.src, Object.assign({
+      hidden: true
+    }, file));
+    options.Subtype = 'FileAttachment';
+    options.FS = filespec; // add description from filespec unless description (Contents) has already been set
+
+    if (options.Contents) {
+      options.Contents = new String(options.Contents);
+    } else if (filespec.data.Desc) {
+      options.Contents = filespec.data.Desc;
+    }
+
+    return this.annotate(x, y, w, h, options);
+  },
+
   _convertRect(x1, y1, w, h) {
     // flip y1 and y2
     let y2 = y1;
@@ -4817,6 +4905,489 @@ var OutlineMixin = {
     if (this.outline.children.length > 0) {
       this._root.data.Outlines = this.outline.dictionary;
       return this._root.data.PageMode = 'UseOutlines';
+    }
+  }
+
+};
+
+function _defineProperty(obj, key, value) {
+  if (key in obj) {
+    Object.defineProperty(obj, key, {
+      value: value,
+      enumerable: true,
+      configurable: true,
+      writable: true
+    });
+  } else {
+    obj[key] = value;
+  }
+
+  return obj;
+}
+
+function ownKeys(object, enumerableOnly) {
+  var keys = Object.keys(object);
+
+  if (Object.getOwnPropertySymbols) {
+    var symbols = Object.getOwnPropertySymbols(object);
+    if (enumerableOnly) symbols = symbols.filter(function (sym) {
+      return Object.getOwnPropertyDescriptor(object, sym).enumerable;
+    });
+    keys.push.apply(keys, symbols);
+  }
+
+  return keys;
+}
+
+function _objectSpread2(target) {
+  for (var i = 1; i < arguments.length; i++) {
+    var source = arguments[i] != null ? arguments[i] : {};
+
+    if (i % 2) {
+      ownKeys(Object(source), true).forEach(function (key) {
+        _defineProperty(target, key, source[key]);
+      });
+    } else if (Object.getOwnPropertyDescriptors) {
+      Object.defineProperties(target, Object.getOwnPropertyDescriptors(source));
+    } else {
+      ownKeys(Object(source)).forEach(function (key) {
+        Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key));
+      });
+    }
+  }
+
+  return target;
+}
+
+/*
+PDFStructureContent - a reference to a marked structure content
+By Ben Schmidt
+*/
+class PDFStructureContent {
+  constructor(pageRef, mcid) {
+    this.refs = [{
+      pageRef,
+      mcid
+    }];
+  }
+
+  push(structContent) {
+    structContent.refs.forEach(ref => this.refs.push(ref));
+  }
+
+}
+
+/*
+PDFStructureElement - represents an element in the PDF logical structure tree
+By Ben Schmidt
+*/
+
+class PDFStructureElement {
+  constructor(document, type, options = {}, children = null) {
+    this.document = document;
+    this._attached = false;
+    this._ended = false;
+    this._flushed = false;
+    this.dictionary = document.ref({
+      // Type: "StructElem",
+      S: type
+    });
+    const data = this.dictionary.data;
+
+    if (Array.isArray(options) || this._isValidChild(options)) {
+      children = options;
+      options = {};
+    }
+
+    if (typeof options.title !== 'undefined') {
+      data.T = new String(options.title);
+    }
+
+    if (typeof options.lang !== 'undefined') {
+      data.Lang = new String(options.lang);
+    }
+
+    if (typeof options.alt !== 'undefined') {
+      data.Alt = new String(options.alt);
+    }
+
+    if (typeof options.expanded !== 'undefined') {
+      data.E = new String(options.expanded);
+    }
+
+    if (typeof options.actual !== 'undefined') {
+      data.ActualText = new String(options.actual);
+    }
+
+    this._children = [];
+
+    if (children) {
+      if (!Array.isArray(children)) {
+        children = [children];
+      }
+
+      children.forEach(child => this.add(child));
+      this.end();
+    }
+  }
+
+  add(child) {
+    if (this._ended) {
+      throw new Error(`Cannot add child to already-ended structure element`);
+    }
+
+    if (!this._isValidChild(child)) {
+      throw new Error(`Invalid structure element child`);
+    }
+
+    if (child instanceof PDFStructureElement) {
+      child.setParent(this.dictionary);
+
+      if (this._attached) {
+        child.setAttached();
+      }
+    }
+
+    if (child instanceof PDFStructureContent) {
+      this._addContentToParentTree(child);
+    }
+
+    if (typeof child === 'function' && this._attached) {
+      // _contentForClosure() adds the content to the parent tree
+      child = this._contentForClosure(child);
+    }
+
+    this._children.push(child);
+
+    return this;
+  }
+
+  _addContentToParentTree(content) {
+    content.refs.forEach(({
+      pageRef,
+      mcid
+    }) => {
+      const pageStructParents = this.document.getStructParentTree().get(pageRef.data.StructParents);
+      pageStructParents[mcid] = this.dictionary;
+    });
+  }
+
+  setParent(parentRef) {
+    if (this.dictionary.data.P) {
+      throw new Error(`Structure element added to more than one parent`);
+    }
+
+    this.dictionary.data.P = parentRef;
+
+    this._flush();
+  }
+
+  setAttached() {
+    if (this._attached) {
+      return;
+    }
+
+    this._children.forEach((child, index) => {
+      if (child instanceof PDFStructureElement) {
+        child.setAttached();
+      }
+
+      if (typeof child === 'function') {
+        this._children[index] = this._contentForClosure(child);
+      }
+    });
+
+    this._attached = true;
+
+    this._flush();
+  }
+
+  end() {
+    if (this._ended) {
+      return;
+    }
+
+    this._children.filter(child => child instanceof PDFStructureElement).forEach(child => child.end());
+
+    this._ended = true;
+
+    this._flush();
+  }
+
+  _isValidChild(child) {
+    return child instanceof PDFStructureElement || child instanceof PDFStructureContent || typeof child === 'function';
+  }
+
+  _contentForClosure(closure) {
+    const content = this.document.markStructureContent(this.dictionary.data.S);
+    closure();
+    this.document.endMarkedContent();
+
+    this._addContentToParentTree(content);
+
+    return content;
+  }
+
+  _isFlushable() {
+    if (!this.dictionary.data.P || !this._ended) {
+      return false;
+    }
+
+    return this._children.every(child => {
+      if (typeof child === 'function') {
+        return false;
+      }
+
+      if (child instanceof PDFStructureElement) {
+        return child._isFlushable();
+      }
+
+      return true;
+    });
+  }
+
+  _flush() {
+    if (this._flushed || !this._isFlushable()) {
+      return;
+    }
+
+    this.dictionary.data.K = [];
+
+    this._children.forEach(child => this._flushChild(child));
+
+    this.dictionary.end(); // free memory used by children; the dictionary itself may still be
+    // referenced by a parent structure element or root, but we can
+    // at least trim the tree here
+
+    this._children = [];
+    this.dictionary.data.K = null;
+    this._flushed = true;
+  }
+
+  _flushChild(child) {
+    if (child instanceof PDFStructureElement) {
+      this.dictionary.data.K.push(child.dictionary);
+    }
+
+    if (child instanceof PDFStructureContent) {
+      child.refs.forEach(({
+        pageRef,
+        mcid
+      }) => {
+        if (!this.dictionary.data.Pg) {
+          this.dictionary.data.Pg = pageRef;
+        }
+
+        if (this.dictionary.data.Pg === pageRef) {
+          this.dictionary.data.K.push(mcid);
+        } else {
+          this.dictionary.data.K.push({
+            Type: "MCR",
+            Pg: pageRef,
+            MCID: mcid
+          });
+        }
+      });
+    }
+  }
+
+}
+
+/*
+PDFNumberTree - represents a number tree object
+*/
+
+class PDFNumberTree extends PDFTree {
+  _compareKeys(a, b) {
+    return parseInt(a) - parseInt(b);
+  }
+
+  _keysName() {
+    return "Nums";
+  }
+
+  _dataForKey(k) {
+    return parseInt(k);
+  }
+
+}
+
+var MarkingsMixin = {
+  initMarkings(options) {
+    this.structChildren = [];
+
+    if (options.tagged) {
+      this.getMarkingsDictionary().data.Marked = true;
+    }
+  },
+
+  markContent(tag, options = null) {
+    if (tag === 'Artifact' || options && options.mcid) {
+      let toClose = 0;
+      this.page.markings.forEach(marking => {
+        if (toClose || marking.structContent || marking.tag === 'Artifact') {
+          toClose++;
+        }
+      });
+
+      while (toClose--) {
+        this.endMarkedContent();
+      }
+    }
+
+    if (!options) {
+      this.page.markings.push({
+        tag
+      });
+      this.addContent(`/${tag} BMC`);
+      return this;
+    }
+
+    this.page.markings.push({
+      tag,
+      options
+    });
+    const dictionary = {};
+
+    if (typeof options.mcid !== 'undefined') {
+      dictionary.MCID = options.mcid;
+    }
+
+    if (tag === 'Artifact') {
+      if (typeof options.type === 'string') {
+        dictionary.Type = options.type;
+      }
+
+      if (Array.isArray(options.bbox)) {
+        dictionary.BBox = [options.bbox[0], this.page.height - options.bbox[3], options.bbox[2], this.page.height - options.bbox[1]];
+      }
+
+      if (Array.isArray(options.attached) && options.attached.every(val => typeof val === 'string')) {
+        dictionary.Attached = options.attached;
+      }
+    }
+
+    if (tag === 'Span') {
+      if (options.lang) {
+        dictionary.Lang = new String(options.lang);
+      }
+
+      if (options.alt) {
+        dictionary.Alt = new String(options.alt);
+      }
+
+      if (options.expanded) {
+        dictionary.E = new String(options.expanded);
+      }
+
+      if (options.actual) {
+        dictionary.ActualText = new String(options.actual);
+      }
+    }
+
+    this.addContent(`/${tag} ${PDFObject.convert(dictionary)} BDC`);
+    return this;
+  },
+
+  markStructureContent(tag, options = {}) {
+    const pageStructParents = this.getStructParentTree().get(this.page.structParentTreeKey);
+    const mcid = pageStructParents.length;
+    pageStructParents.push(null);
+    this.markContent(tag, _objectSpread2(_objectSpread2({}, options), {}, {
+      mcid
+    }));
+    const structContent = new PDFStructureContent(this.page.dictionary, mcid);
+    this.page.markings.slice(-1)[0].structContent = structContent;
+    return structContent;
+  },
+
+  endMarkedContent() {
+    this.page.markings.pop();
+    this.addContent('EMC');
+    return this;
+  },
+
+  struct(type, options = {}, children = null) {
+    return new PDFStructureElement(this, type, options, children);
+  },
+
+  addStructure(structElem) {
+    const structTreeRoot = this.getStructTreeRoot();
+    structElem.setParent(structTreeRoot);
+    structElem.setAttached();
+    this.structChildren.push(structElem);
+
+    if (!structTreeRoot.data.K) {
+      structTreeRoot.data.K = [];
+    }
+
+    structTreeRoot.data.K.push(structElem.dictionary);
+    return this;
+  },
+
+  initPageMarkings(pageMarkings) {
+    pageMarkings.forEach(marking => {
+      if (marking.structContent) {
+        const structContent = marking.structContent;
+        const newStructContent = this.markStructureContent(marking.tag, marking.options);
+        structContent.push(newStructContent);
+        this.page.markings.slice(-1)[0].structContent = structContent;
+      } else {
+        this.markContent(marking.tag, marking.options);
+      }
+    });
+  },
+
+  endPageMarkings(page) {
+    const pageMarkings = page.markings;
+    pageMarkings.forEach(() => page.write('EMC'));
+    page.markings = [];
+    return pageMarkings;
+  },
+
+  getMarkingsDictionary() {
+    if (!this._root.data.Markings) {
+      this._root.data.Markings = this.ref({});
+    }
+
+    return this._root.data.Markings;
+  },
+
+  getStructTreeRoot() {
+    if (!this._root.data.StructTreeRoot) {
+      this._root.data.StructTreeRoot = this.ref({
+        Type: "StructTreeRoot",
+        ParentTree: new PDFNumberTree(),
+        ParentTreeNextKey: 0
+      });
+    }
+
+    return this._root.data.StructTreeRoot;
+  },
+
+  getStructParentTree() {
+    return this.getStructTreeRoot().data.ParentTree;
+  },
+
+  createStructParentTreeNextKey() {
+    // initialise the Markings dictionary
+    this.getMarkingsDictionary();
+    const structTreeRoot = this.getStructTreeRoot();
+    const key = structTreeRoot.data.ParentTreeNextKey++;
+    structTreeRoot.data.ParentTree.add(key, []);
+    return key;
+  },
+
+  endMarkings() {
+    const structTreeRoot = this._root.data.StructTreeRoot;
+
+    if (structTreeRoot) {
+      structTreeRoot.end();
+      this.structChildren.forEach(structElem => structElem.end());
+    }
+
+    if (this._root.data.Markings) {
+      this._root.data.Markings.end();
     }
   }
 
@@ -5214,8 +5785,6 @@ var AcroFormMixin = {
       options.Opt = select;
     }
 
-    if (options.value || options.defaultValue) ;
-
     Object.keys(VALUE_MAP).forEach(key => {
       if (options[key] !== undefined) {
         options[VALUE_MAP[key]] = options[key];
@@ -5242,6 +5811,130 @@ var AcroFormMixin = {
   }
 
 };
+
+var AttachmentsMixin = {
+  /**
+   * Embed contents of `src` in PDF
+   * @param {Buffer | ArrayBuffer | string} src input Buffer, ArrayBuffer, base64 encoded string or path to file
+   * @param {object} options
+   *  * options.name: filename to be shown in PDF, will use `src` if none set
+   *  * options.type: filetype to be shown in PDF
+   *  * options.description: description to be shown in PDF
+   *  * options.hidden: if true, do not add attachment to EmbeddedFiles dictionary. Useful for file attachment annotations
+   *  * options.creationDate: override creation date
+   *  * options.modifiedDate: override modified date
+   * @returns filespec reference
+   */
+  file(src, options = {}) {
+    options.name = options.name || src;
+    const refBody = {
+      Type: 'EmbeddedFile',
+      Params: {}
+    };
+    let data;
+
+    if (!src) {
+      throw new Error('No src specified');
+    }
+
+    if (Buffer.isBuffer(src)) {
+      data = src;
+    } else if (src instanceof ArrayBuffer) {
+      data = Buffer.from(new Uint8Array(src));
+    } else {
+      let match;
+
+      if (match = /^data:(.*);base64,(.*)$/.exec(src)) {
+        if (match[1]) {
+          refBody.Subtype = match[1].replace('/', '#2F');
+        }
+
+        data = Buffer.from(match[2], 'base64');
+      } else {
+        data = fs.readFileSync(src);
+
+        if (!data) {
+          throw new Error(`Could not read contents of file at filepath ${src}`);
+        } // update CreationDate and ModDate
+
+
+        const {
+          birthtime,
+          ctime
+        } = fs.statSync(src);
+        refBody.Params.CreationDate = birthtime;
+        refBody.Params.ModDate = ctime;
+      }
+    } // override creation date and modified date
+
+
+    if (options.creationDate instanceof Date) {
+      refBody.Params.CreationDate = options.creationDate;
+    }
+
+    if (options.modifiedDate instanceof Date) {
+      refBody.Params.ModDate = options.modifiedDate;
+    } // add optional subtype
+
+
+    if (options.type) {
+      refBody.Subtype = options.type.replace('/', '#2F');
+    } // add checksum and size information
+
+
+    const checksum = CryptoJS.MD5(CryptoJS.lib.WordArray.create(new Uint8Array(data)));
+    refBody.Params.CheckSum = new String(checksum);
+    refBody.Params.Size = data.byteLength; // save some space when embedding the same file again
+    // if a file with the same name and metadata exists, reuse its reference
+
+    let ref;
+    if (!this._fileRegistry) this._fileRegistry = {};
+    let file = this._fileRegistry[options.name];
+
+    if (file && isEqual(refBody, file)) {
+      ref = file.ref;
+    } else {
+      ref = this.ref(refBody);
+      ref.end(data);
+      this._fileRegistry[options.name] = _objectSpread2(_objectSpread2({}, refBody), {}, {
+        ref
+      });
+    } // add filespec for embedded file
+
+
+    const fileSpecBody = {
+      Type: 'Filespec',
+      F: new String(options.name),
+      EF: {
+        F: ref
+      },
+      UF: new String(options.name)
+    };
+
+    if (options.description) {
+      fileSpecBody.Desc = new String(options.description);
+    }
+
+    const filespec = this.ref(fileSpecBody);
+    filespec.end();
+
+    if (!options.hidden) {
+      this.addNamedEmbeddedFile(options.name, filespec);
+    }
+
+    return filespec;
+  }
+
+};
+/** check two embedded file metadata objects for equality */
+
+function isEqual(a, b) {
+  if (a.Subtype !== b.Subtype || a.Params.CheckSum.toString() !== b.Params.CheckSum.toString() || a.Params.Size !== b.Params.Size || a.Params.CreationDate !== b.Params.CreationDate || a.Params.ModDate !== b.Params.ModDate) {
+    return false;
+  }
+
+  return true;
+}
 
 /*
 PDFDocument - represents an entire PDF document
@@ -5297,7 +5990,12 @@ class PDFDocument extends stream.Readable {
       Type: 'Catalog',
       Pages,
       Names
-    }); // The current page
+    });
+
+    if (this.options.lang) {
+      this._root.data.Lang = new String(this.options.lang);
+    } // The current page
+
 
     this.page = null; // Initialize mixins
 
@@ -5306,7 +6004,8 @@ class PDFDocument extends stream.Readable {
     this.initFonts(options.font);
     this.initText();
     this.initImages();
-    this.initOutline(); // Initialize the metadata
+    this.initOutline();
+    this.initMarkings(options); // Initialize the metadata
 
     this.info = {
       Producer: 'PDFKit',
@@ -5319,6 +6018,12 @@ class PDFDocument extends stream.Readable {
         const val = this.options.info[key];
         this.info[key] = val;
       }
+    }
+
+    if (this.options.displayTitle) {
+      this._root.data.ViewerPreferences = this.ref({
+        DisplayDocTitle: true
+      });
     } // Generate file ID
 
 
@@ -5339,12 +6044,12 @@ class PDFDocument extends stream.Readable {
   }
 
   addPage(options) {
-    // end the current page if needed
     if (options == null) {
       ({
         options
       } = this);
-    }
+    } // end the current page if needed
+
 
     if (!this.options.bufferPages) {
       this.flushPages();
@@ -5367,6 +6072,13 @@ class PDFDocument extends stream.Readable {
     this._ctm = [1, 0, 0, 1, 0, 0];
     this.transform(1, 0, 0, -1, 0, this.page.height);
     this.emit('pageAdded');
+    return this;
+  }
+
+  continueOnNewPage(options) {
+    const pageMarkings = this.endPageMarkings(this.page);
+    this.addPage(options);
+    this.initPageMarkings(pageMarkings);
     return this;
   }
 
@@ -5395,6 +6107,7 @@ class PDFDocument extends stream.Readable {
     this._pageBufferStart += pages.length;
 
     for (let page of pages) {
+      this.endPageMarkings(page);
       page.end();
     }
   }
@@ -5411,6 +6124,18 @@ class PDFDocument extends stream.Readable {
     args.unshift(this.page.dictionary);
 
     this._root.data.Names.data.Dests.add(name, args);
+  }
+
+  addNamedEmbeddedFile(name, ref) {
+    if (!this._root.data.Names.data.EmbeddedFiles) {
+      // disabling /Limits for this tree fixes attachments not showing in Adobe Reader
+      this._root.data.Names.data.EmbeddedFiles = new PDFNameTree({
+        limits: false
+      });
+    } // add filespec to EmbeddedFiles
+
+
+    this._root.data.Names.data.EmbeddedFiles.add(name, ref);
   }
 
   addNamedJavaScript(name, js) {
@@ -5441,7 +6166,7 @@ class PDFDocument extends stream.Readable {
 
   _write(data) {
     if (!Buffer.isBuffer(data)) {
-      data = new Buffer(data + '\n', 'binary');
+      data = Buffer.from(data + '\n', 'binary');
     }
 
     this.push(data);
@@ -5499,6 +6224,7 @@ Please pipe the document into a Node stream.\
     }
 
     this.endOutline();
+    this.endMarkings();
 
     this._root.end();
 
@@ -5507,6 +6233,10 @@ Please pipe the document into a Node stream.\
     this._root.data.Names.end();
 
     this.endAcroForm();
+
+    if (this._root.data.ViewerPreferences) {
+      this._root.data.ViewerPreferences.end();
+    }
 
     if (this._security) {
       this._security.end();
@@ -5519,7 +6249,7 @@ Please pipe the document into a Node stream.\
     }
   }
 
-  _finalize(fn) {
+  _finalize() {
     // generate xref
     const xRefOffset = this._offset;
 
@@ -5578,13 +6308,16 @@ mixin(TextMixin);
 mixin(ImagesMixin);
 mixin(AnnotationsMixin);
 mixin(OutlineMixin);
+mixin(MarkingsMixin);
 mixin(AcroFormMixin);
+mixin(AttachmentsMixin);
+PDFDocument.LineWrapper = LineWrapper;
 
 module.exports = PDFDocument;
 
 
 }).call(this,require("buffer").Buffer)
-},{"buffer":58,"crypto-js":192,"events":222,"fontkit":223,"fs":57,"linebreak":231,"png-js":233,"stream":270,"zlib":45}],2:[function(require,module,exports){
+},{"buffer":58,"crypto-js":192,"events":222,"fontkit":223,"fs":57,"linebreak":231,"png-js":233,"stream":269,"zlib":45}],2:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -6926,7 +7659,7 @@ exports.default = typeof _symbol2.default === "function" && _typeof(_iterator2.d
 },{"../core-js/symbol":21,"../core-js/symbol/iterator":22}],30:[function(require,module,exports){
 module.exports = require("regenerator-runtime");
 
-},{"regenerator-runtime":250}],31:[function(require,module,exports){
+},{"regenerator-runtime":249}],31:[function(require,module,exports){
 'use strict'
 
 exports.byteLength = byteLength
@@ -7111,7 +7844,7 @@ var kBitMask = new Uint32Array([
 function BrotliBitReader(input) {
   this.buf_ = new Uint8Array(BROTLI_IBUF_SIZE);
   this.input_ = input;    /* input callback */
-
+  
   this.reset();
 }
 
@@ -7125,13 +7858,13 @@ BrotliBitReader.prototype.reset = function() {
   this.bit_pos_ = 0;      /* current bit-reading position in val_ */
   this.bit_end_pos_ = 0;  /* bit-reading end position from LSB of val_ */
   this.eos_ = 0;          /* input stream is finished */
-
+  
   this.readMoreInput();
   for (var i = 0; i < 4; i++) {
     this.val_ |= this.buf_[this.pos_] << (8 * i);
     ++this.pos_;
   }
-
+  
   return this.bit_end_pos_ > 0;
 };
 
@@ -7159,14 +7892,14 @@ BrotliBitReader.prototype.readMoreInput = function() {
     if (bytes_read < 0) {
       throw new Error('Unexpected end of input');
     }
-
+    
     if (bytes_read < BROTLI_READ_SIZE) {
       this.eos_ = 1;
       /* Store 32 bytes of zero after the stream end. */
       for (var p = 0; p < 32; p++)
         this.buf_[dst + bytes_read + p] = 0;
     }
-
+    
     if (dst === 0) {
       /* Copy the head of the ringbuffer to the slack region. */
       for (var p = 0; p < 32; p++)
@@ -7176,13 +7909,13 @@ BrotliBitReader.prototype.readMoreInput = function() {
     } else {
       this.buf_ptr_ = 0;
     }
-
+    
     this.bit_end_pos_ += bytes_read << 3;
   }
 };
 
 /* Guarantees that there are at least 24 bits in the buffer. */
-BrotliBitReader.prototype.fillBitWindow = function() {
+BrotliBitReader.prototype.fillBitWindow = function() {    
   while (this.bit_pos_ >= 8) {
     this.val_ >>>= 8;
     this.val_ |= this.buf_[this.pos_ & BROTLI_IBUF_MASK] << 24;
@@ -7197,7 +7930,7 @@ BrotliBitReader.prototype.readBits = function(n_bits) {
   if (32 - this.bit_pos_ < n_bits) {
     this.fillBitWindow();
   }
-
+  
   var val = ((this.val_ >>> this.bit_pos_) & kBitMask[n_bits]);
   this.bit_pos_ += n_bits;
   return val;
@@ -7521,17 +8254,17 @@ function DecodeWindowBits(br) {
   if (br.readBits(1) === 0) {
     return 16;
   }
-
+  
   n = br.readBits(3);
   if (n > 0) {
     return 17 + n;
   }
-
+  
   n = br.readBits(3);
   if (n > 0) {
     return 8 + n;
   }
-
+  
   return 17;
 }
 
@@ -7556,32 +8289,32 @@ function MetaBlockLength() {
 }
 
 function DecodeMetaBlockLength(br) {
-  var out = new MetaBlockLength;
+  var out = new MetaBlockLength;  
   var size_nibbles;
   var size_bytes;
   var i;
-
+  
   out.input_end = br.readBits(1);
   if (out.input_end && br.readBits(1)) {
     return out;
   }
-
+  
   size_nibbles = br.readBits(2) + 4;
   if (size_nibbles === 7) {
     out.is_metadata = true;
-
+    
     if (br.readBits(1) !== 0)
       throw new Error('Invalid reserved bit');
-
+    
     size_bytes = br.readBits(2);
     if (size_bytes === 0)
       return out;
-
+    
     for (i = 0; i < size_bytes; i++) {
       var next_byte = br.readBits(8);
       if (i + 1 === size_bytes && size_bytes > 1 && next_byte === 0)
         throw new Error('Invalid size byte');
-
+      
       out.meta_block_length |= next_byte << (i * 8);
     }
   } else {
@@ -7589,24 +8322,24 @@ function DecodeMetaBlockLength(br) {
       var next_nibble = br.readBits(4);
       if (i + 1 === size_nibbles && size_nibbles > 4 && next_nibble === 0)
         throw new Error('Invalid size nibble');
-
+      
       out.meta_block_length |= next_nibble << (i * 4);
     }
   }
-
+  
   ++out.meta_block_length;
-
+  
   if (!out.input_end && !out.is_metadata) {
     out.is_uncompressed = br.readBits(1);
   }
-
+  
   return out;
 }
 
 /* Decodes the next Huffman code from bit-stream. */
 function ReadSymbol(table, index, br) {
   var start_index = index;
-
+  
   var nbits;
   br.fillBitWindow();
   index += (br.val_ >>> br.bit_pos_) & HUFFMAN_TABLE_MASK;
@@ -7626,17 +8359,17 @@ function ReadHuffmanCodeLengths(code_length_code_lengths, num_symbols, code_leng
   var repeat = 0;
   var repeat_code_len = 0;
   var space = 32768;
-
+  
   var table = [];
   for (var i = 0; i < 32; i++)
     table.push(new HuffmanCode(0, 0));
-
+  
   BrotliBuildHuffmanTable(table, 0, 5, code_length_code_lengths, CODE_LENGTH_CODES);
 
   while (symbol < num_symbols && space > 0) {
     var p = 0;
     var code_len;
-
+    
     br.readMoreInput();
     br.fillBitWindow();
     p += (br.val_ >>> br.bit_pos_) & 31;
@@ -7671,12 +8404,12 @@ function ReadHuffmanCodeLengths(code_length_code_lengths, num_symbols, code_leng
       if (symbol + repeat_delta > num_symbols) {
         throw new Error('[ReadHuffmanCodeLengths] symbol + repeat_delta > num_symbols');
       }
-
+      
       for (var x = 0; x < repeat_delta; x++)
         code_lengths[symbol + x] = repeat_code_len;
-
+      
       symbol += repeat_delta;
-
+      
       if (repeat_code_len !== 0) {
         space -= repeat_delta << (15 - repeat_code_len);
       }
@@ -7685,7 +8418,7 @@ function ReadHuffmanCodeLengths(code_length_code_lengths, num_symbols, code_leng
   if (space !== 0) {
     throw new Error("[ReadHuffmanCodeLengths] space = " + space);
   }
-
+  
   for (; symbol < num_symbols; symbol++)
     code_lengths[symbol] = 0;
 }
@@ -7694,9 +8427,9 @@ function ReadHuffmanCode(alphabet_size, tables, table, br) {
   var table_size = 0;
   var simple_code_or_skip;
   var code_lengths = new Uint8Array(alphabet_size);
-
+  
   br.readMoreInput();
-
+  
   /* simple_code_or_skip is used as follows:
      1 for simple code;
      0 for no skipping, 2 skips 2 code lengths, 3 skips 3 code lengths */
@@ -7732,7 +8465,7 @@ function ReadHuffmanCode(alphabet_size, tables, table, br) {
         if (symbols[0] === symbols[1]) {
           throw new Error('[ReadHuffmanCode] invalid symbols');
         }
-
+        
         code_lengths[symbols[1]] = 1;
         break;
       case 4:
@@ -7744,7 +8477,7 @@ function ReadHuffmanCode(alphabet_size, tables, table, br) {
             (symbols[2] === symbols[3])) {
           throw new Error('[ReadHuffmanCode] invalid symbols');
         }
-
+        
         if (br.readBits(1)) {
           code_lengths[symbols[2]] = 3;
           code_lengths[symbols[3]] = 3;
@@ -7760,9 +8493,9 @@ function ReadHuffmanCode(alphabet_size, tables, table, br) {
     var num_codes = 0;
     /* Static Huffman code for the code length code lengths */
     var huff = [
-      new HuffmanCode(2, 0), new HuffmanCode(2, 4), new HuffmanCode(2, 3), new HuffmanCode(3, 2),
+      new HuffmanCode(2, 0), new HuffmanCode(2, 4), new HuffmanCode(2, 3), new HuffmanCode(3, 2), 
       new HuffmanCode(2, 0), new HuffmanCode(2, 4), new HuffmanCode(2, 3), new HuffmanCode(4, 1),
-      new HuffmanCode(2, 0), new HuffmanCode(2, 4), new HuffmanCode(2, 3), new HuffmanCode(3, 2),
+      new HuffmanCode(2, 0), new HuffmanCode(2, 4), new HuffmanCode(2, 3), new HuffmanCode(3, 2), 
       new HuffmanCode(2, 0), new HuffmanCode(2, 4), new HuffmanCode(2, 3), new HuffmanCode(4, 5)
     ];
     for (i = simple_code_or_skip; i < CODE_LENGTH_CODES && space > 0; ++i) {
@@ -7779,19 +8512,19 @@ function ReadHuffmanCode(alphabet_size, tables, table, br) {
         ++num_codes;
       }
     }
-
+    
     if (!(num_codes === 1 || space === 0))
       throw new Error('[ReadHuffmanCode] invalid num_codes or space');
-
+    
     ReadHuffmanCodeLengths(code_length_code_lengths, alphabet_size, code_lengths, br);
   }
-
+  
   table_size = BrotliBuildHuffmanTable(tables, table, HUFFMAN_TABLE_BITS, code_lengths, alphabet_size);
-
+  
   if (table_size === 0) {
     throw new Error("[ReadHuffmanCode] BuildHuffmanTable failed: ");
   }
-
+  
   return table_size;
 }
 
@@ -7839,7 +8572,7 @@ function InverseMoveToFrontTransform(v, v_len) {
 function HuffmanTreeGroup(alphabet_size, num_htrees) {
   this.alphabet_size = alphabet_size;
   this.num_htrees = num_htrees;
-  this.codes = new Array(num_htrees + num_htrees * kMaxHuffmanTableSize[(alphabet_size + 31) >>> 5]);
+  this.codes = new Array(num_htrees + num_htrees * kMaxHuffmanTableSize[(alphabet_size + 31) >>> 5]);  
   this.htrees = new Uint32Array(num_htrees);
 }
 
@@ -7860,7 +8593,7 @@ function DecodeContextMap(context_map_size, br) {
   var max_run_length_prefix = 0;
   var table;
   var i;
-
+  
   br.readMoreInput();
   var num_htrees = out.num_htrees = DecodeVarLenUint8(br) + 1;
 
@@ -7873,14 +8606,14 @@ function DecodeContextMap(context_map_size, br) {
   if (use_rle_for_zeros) {
     max_run_length_prefix = br.readBits(4) + 1;
   }
-
+  
   table = [];
   for (i = 0; i < HUFFMAN_MAX_TABLE_SIZE; i++) {
     table[i] = new HuffmanCode(0, 0);
   }
-
+  
   ReadHuffmanCode(num_htrees + max_run_length_prefix, table, 0, br);
-
+  
   for (i = 0; i < context_map_size;) {
     var code;
 
@@ -7906,7 +8639,7 @@ function DecodeContextMap(context_map_size, br) {
   if (br.readBits(1)) {
     InverseMoveToFrontTransform(context_map, context_map_size);
   }
-
+  
   return out;
 }
 
@@ -7967,7 +8700,7 @@ function CopyUncompressedBlockToOutput(output, len, pos, ringbuffer, ringbuffer_
     var tail = BrotliBitReader.IBUF_MASK + 1 - br_pos;
     for (var x = 0; x < tail; x++)
       ringbuffer[rb_pos + x] = br.buf_[br_pos + x];
-
+    
     nbytes -= tail;
     rb_pos += tail;
     len -= tail;
@@ -7976,7 +8709,7 @@ function CopyUncompressedBlockToOutput(output, len, pos, ringbuffer, ringbuffer_
 
   for (var x = 0; x < nbytes; x++)
     ringbuffer[rb_pos + x] = br.buf_[br_pos + x];
-
+  
   rb_pos += nbytes;
   len -= nbytes;
 
@@ -7984,7 +8717,7 @@ function CopyUncompressedBlockToOutput(output, len, pos, ringbuffer, ringbuffer_
      ringbuffer to its beginning and flush the ringbuffer to the output. */
   if (rb_pos >= rb_size) {
     output.write(ringbuffer, rb_size);
-    rb_pos -= rb_size;
+    rb_pos -= rb_size;    
     for (var x = 0; x < rb_pos; x++)
       ringbuffer[x] = ringbuffer[rb_size + x];
   }
@@ -8032,20 +8765,20 @@ exports.BrotliDecompressedSize = BrotliDecompressedSize;
 
 function BrotliDecompressBuffer(buffer, output_size) {
   var input = new BrotliInput(buffer);
-
+  
   if (output_size == null) {
     output_size = BrotliDecompressedSize(buffer);
   }
-
+  
   var output_buffer = new Uint8Array(output_size);
   var output = new BrotliOutput(output_buffer);
-
+  
   BrotliDecompress(input, output);
-
+  
   if (output.pos < output.buffer.length) {
     output.buffer = output.buffer.subarray(0, output.pos);
   }
-
+  
   return output.buffer;
 }
 
@@ -8132,7 +8865,7 @@ function BrotliDecompress(input, output) {
     }
 
     br.readMoreInput();
-
+    
     var _out = DecodeMetaBlockLength(br);
     meta_block_remaining_len = _out.meta_block_length;
     if (pos + meta_block_remaining_len > output.buffer.length) {
@@ -8140,26 +8873,26 @@ function BrotliDecompress(input, output) {
       var tmp = new Uint8Array( pos + meta_block_remaining_len );
       tmp.set( output.buffer );
       output.buffer = tmp;
-    }
+    }    
     input_end = _out.input_end;
     is_uncompressed = _out.is_uncompressed;
-
+    
     if (_out.is_metadata) {
       JumpToByteBoundary(br);
-
+      
       for (; meta_block_remaining_len > 0; --meta_block_remaining_len) {
         br.readMoreInput();
         /* Read one byte and ignore it. */
         br.readBits(8);
       }
-
+      
       continue;
     }
-
+    
     if (meta_block_remaining_len === 0) {
       continue;
     }
-
+    
     if (is_uncompressed) {
       br.bit_pos_ = (br.bit_pos_ + 7) & ~7;
       CopyUncompressedBlockToOutput(output, meta_block_remaining_len, pos,
@@ -8167,7 +8900,7 @@ function BrotliDecompress(input, output) {
       pos += meta_block_remaining_len;
       continue;
     }
-
+    
     for (i = 0; i < 3; ++i) {
       num_block_types[i] = DecodeVarLenUint8(br) + 1;
       if (num_block_types[i] >= 2) {
@@ -8177,9 +8910,9 @@ function BrotliDecompress(input, output) {
         block_type_rb_index[i] = 1;
       }
     }
-
+    
     br.readMoreInput();
-
+    
     distance_postfix_bits = br.readBits(2);
     num_direct_distance_codes = NUM_DISTANCE_SHORT_CODES + (br.readBits(4) << distance_postfix_bits);
     distance_postfix_mask = (1 << distance_postfix_bits) - 1;
@@ -8190,15 +8923,15 @@ function BrotliDecompress(input, output) {
        br.readMoreInput();
        context_modes[i] = (br.readBits(2) << 1);
     }
-
+    
     var _o1 = DecodeContextMap(num_block_types[0] << kLiteralContextBits, br);
     num_literal_htrees = _o1.num_htrees;
     context_map = _o1.context_map;
-
+    
     var _o2 = DecodeContextMap(num_block_types[2] << kDistanceContextBits, br);
     num_dist_htrees = _o2.num_htrees;
     dist_context_map = _o2.context_map;
-
+    
     hgroup[0] = new HuffmanTreeGroup(kNumLiteralCodes, num_literal_htrees);
     hgroup[1] = new HuffmanTreeGroup(kNumInsertAndCopyCodes, num_block_types[1]);
     hgroup[2] = new HuffmanTreeGroup(num_distance_codes, num_dist_htrees);
@@ -8228,7 +8961,7 @@ function BrotliDecompress(input, output) {
       var copy_dst;
 
       br.readMoreInput();
-
+      
       if (block_length[1] === 0) {
         DecodeBlockType(num_block_types[1],
                         block_type_trees, 1, block_type, block_type_rb,
@@ -8284,7 +9017,7 @@ function BrotliDecompress(input, output) {
 
       if (distance_code < 0) {
         var context;
-
+        
         br.readMoreInput();
         if (block_length[2] === 0) {
           DecodeBlockType(num_block_types[2],
@@ -8346,7 +9079,7 @@ function BrotliDecompress(input, output) {
             meta_block_remaining_len -= len;
             if (copy_dst >= ringbuffer_end) {
               output.write(ringbuffer, ringbuffer_size);
-
+              
               for (var _x = 0; _x < (copy_dst - ringbuffer_end); _x++)
                 ringbuffer[_x] = ringbuffer[ringbuffer_end + _x];
             }
@@ -8402,10 +9135,10 @@ var base64 = require('base64-js');
 var fs = require('fs');
 
 /**
- * The normal dictionary-data.js is quite large, which makes it
- * unsuitable for browser usage. In order to make it smaller,
+ * The normal dictionary-data.js is quite large, which makes it 
+ * unsuitable for browser usage. In order to make it smaller, 
  * we read dictionary.bin, which is a compressed version of
- * the dictionary, and on initial load, Brotli decompresses
+ * the dictionary, and on initial load, Brotli decompresses 
  * it's own dictionary. 😜
  */
 exports.init = function() {
@@ -8533,7 +9266,7 @@ exports.BrotliBuildHuffmanTable = function(root_table, table, root_bits, code_le
       sorted[offset[code_lengths[symbol]]++] = symbol;
     }
   }
-
+  
   table_bits = root_bits;
   table_size = 1 << table_bits;
   total_size = table_size;
@@ -8543,7 +9276,7 @@ exports.BrotliBuildHuffmanTable = function(root_table, table, root_bits, code_le
     for (key = 0; key < total_size; ++key) {
       root_table[table + key] = new HuffmanCode(0, sorted[0] & 0xffff);
     }
-
+    
     return total_size;
   }
 
@@ -8576,7 +9309,7 @@ exports.BrotliBuildHuffmanTable = function(root_table, table, root_bits, code_le
       key = GetNextKey(key, len);
     }
   }
-
+  
   return total_size;
 }
 
@@ -8652,10 +9385,10 @@ BrotliInput.prototype.read = function(buf, i, count) {
   if (this.pos + count > this.buffer.length) {
     count = this.buffer.length - this.pos;
   }
-
+  
   for (var p = 0; p < count; p++)
     buf[i + p] = this.buffer[this.pos + p];
-
+  
   this.pos += count;
   return count;
 }
@@ -8670,7 +9403,7 @@ function BrotliOutput(buf) {
 BrotliOutput.prototype.write = function(buf, count) {
   if (this.pos + count > this.buffer.length)
     throw new Error('Output buffer is not large enough');
-
+  
   this.buffer.set(buf.subarray(0, count), this.pos);
   this.pos += count;
   return count;
@@ -8724,10 +9457,10 @@ function Transform(prefix, transform, suffix) {
   this.prefix = new Uint8Array(prefix.length);
   this.transform = transform;
   this.suffix = new Uint8Array(suffix.length);
-
+  
   for (var i = 0; i < prefix.length; i++)
     this.prefix[i] = prefix.charCodeAt(i);
-
+  
   for (var i = 0; i < suffix.length; i++)
     this.suffix[i] = suffix.charCodeAt(i);
 }
@@ -8866,13 +9599,13 @@ function ToUpperCase(p, i) {
     }
     return 1;
   }
-
+  
   /* An overly simplified uppercasing model for utf-8. */
   if (p[i] < 0xe0) {
     p[i + 1] ^= 32;
     return 2;
   }
-
+  
   /* An arbitrary transform for three byte characters. */
   p[i + 2] ^= 5;
   return 3;
@@ -8886,29 +9619,29 @@ exports.transformDictionaryWord = function(dst, idx, word, len, transform) {
   var i = 0;
   var start_idx = idx;
   var uppercase;
-
+  
   if (skip > len) {
     skip = len;
   }
-
+  
   var prefix_pos = 0;
   while (prefix_pos < prefix.length) {
     dst[idx++] = prefix[prefix_pos++];
   }
-
+  
   word += skip;
   len -= skip;
-
+  
   if (t <= kOmitLast9) {
     len -= t;
   }
-
+  
   for (i = 0; i < len; i++) {
     dst[idx++] = BrotliDictionary.dictionary[word + i];
   }
-
+  
   uppercase = idx - len;
-
+  
   if (t === kUppercaseFirst) {
     ToUpperCase(dst, uppercase);
   } else if (t === kUppercaseAll) {
@@ -8918,12 +9651,12 @@ exports.transformDictionaryWord = function(dst, idx, word, len, transform) {
       len -= step;
     }
   }
-
+  
   var suffix_pos = 0;
   while (suffix_pos < suffix.length) {
     dst[idx++] = suffix[suffix_pos++];
   }
-
+  
   return idx - start_idx;
 }
 
@@ -9956,7 +10689,7 @@ util.inherits(DeflateRaw, Zlib);
 util.inherits(InflateRaw, Zlib);
 util.inherits(Unzip, Zlib);
 }).call(this,require('_process'))
-},{"./binding":44,"_process":235,"assert":2,"buffer":58,"stream":270,"util":278}],46:[function(require,module,exports){
+},{"./binding":44,"_process":235,"assert":2,"buffer":58,"stream":269,"util":278}],46:[function(require,module,exports){
 'use strict';
 
 
@@ -58344,7 +59077,7 @@ fontkit.registerFormat(TrueTypeCollection);
 fontkit.registerFormat(DFont);
 module.exports = fontkit;
 }).call(this,require('_process'),require("buffer").Buffer)
-},{"_process":235,"babel-runtime/core-js/array/from":6,"babel-runtime/core-js/get-iterator":7,"babel-runtime/core-js/map":9,"babel-runtime/core-js/number/epsilon":10,"babel-runtime/core-js/object/assign":11,"babel-runtime/core-js/object/define-properties":13,"babel-runtime/core-js/object/define-property":14,"babel-runtime/core-js/object/freeze":15,"babel-runtime/core-js/object/get-own-property-descriptor":16,"babel-runtime/core-js/object/keys":17,"babel-runtime/core-js/set":19,"babel-runtime/core-js/string/from-code-point":20,"babel-runtime/helpers/classCallCheck":23,"babel-runtime/helpers/createClass":24,"babel-runtime/helpers/inherits":26,"babel-runtime/helpers/possibleConstructorReturn":27,"babel-runtime/helpers/typeof":29,"brotli/decompress":42,"buffer":58,"clone":59,"deep-equal":218,"dfa":221,"iconv-lite":57,"restructure":252,"restructure/src/utils":268,"tiny-inflate":272,"unicode-properties":274,"unicode-trie":275}],224:[function(require,module,exports){
+},{"_process":235,"babel-runtime/core-js/array/from":6,"babel-runtime/core-js/get-iterator":7,"babel-runtime/core-js/map":9,"babel-runtime/core-js/number/epsilon":10,"babel-runtime/core-js/object/assign":11,"babel-runtime/core-js/object/define-properties":13,"babel-runtime/core-js/object/define-property":14,"babel-runtime/core-js/object/freeze":15,"babel-runtime/core-js/object/get-own-property-descriptor":16,"babel-runtime/core-js/object/keys":17,"babel-runtime/core-js/set":19,"babel-runtime/core-js/string/from-code-point":20,"babel-runtime/helpers/classCallCheck":23,"babel-runtime/helpers/createClass":24,"babel-runtime/helpers/inherits":26,"babel-runtime/helpers/possibleConstructorReturn":27,"babel-runtime/helpers/typeof":29,"brotli/decompress":42,"buffer":58,"clone":59,"deep-equal":218,"dfa":221,"iconv-lite":57,"restructure":251,"restructure/src/utils":267,"tiny-inflate":272,"unicode-properties":274,"unicode-trie":275}],224:[function(require,module,exports){
 exports.read = function (buffer, offset, isLE, mLen, nBytes) {
   var e, m
   var eLen = (nBytes * 8) - mLen - 1
@@ -58785,7 +59518,7 @@ const mapClass = function(c) {
     default:            return c;
   }
 };
-
+    
 const mapFirst = function(c) {
   switch (c) {
     case LF: case NL: return BK;
@@ -58797,12 +59530,12 @@ const mapFirst = function(c) {
 
 class Break {
   constructor(position, required = false) {
-    this.position = position;
+    this.position = position;    
     this.required = required;
   }
 };
-
-class LineBreaker {
+  
+class LineBreaker {    
   constructor(string) {
     this.string = string;
     this.pos = 0;
@@ -58810,39 +59543,39 @@ class LineBreaker {
     this.curClass = null;
     this.nextClass = null;
   }
-
+  
   nextCodePoint() {
     const code = this.string.charCodeAt(this.pos++);
     const next = this.string.charCodeAt(this.pos);
-
+  
     // If a surrogate pair
     if ((0xd800 <= code && code <= 0xdbff) && (0xdc00 <= next && next <= 0xdfff)) {
       this.pos++;
       return ((code - 0xd800) * 0x400) + (next - 0xdc00) + 0x10000;
     }
-
+    
     return code;
   }
-
+      
   nextCharClass() {
     return mapClass(classTrie.get(this.nextCodePoint()));
   }
-
-  nextBreak() {
+  
+  nextBreak() {    
     // get the first char if we're at the beginning of the string
     if (this.curClass == null) { this.curClass = mapFirst(this.nextCharClass()); }
-
+  
     while (this.pos < this.string.length) {
       this.lastPos = this.pos;
       const lastClass = this.nextClass;
       this.nextClass = this.nextCharClass();
-
+    
       // explicit newline
       if ((this.curClass === BK) || ((this.curClass === CR) && (this.nextClass !== LF))) {
         this.curClass = mapFirst(mapClass(this.nextClass));
         return new Break(this.lastPos, true);
       }
-
+    
       // handle classes not handled by the pair table
       let cur
       switch (this.nextClass) {
@@ -58851,40 +59584,40 @@ class LineBreaker {
         case CR:         cur = CR; break;
         case CB:         cur = BA; break;
       }
-
+      
       if (cur != null) {
         this.curClass = cur;
         if (this.nextClass === CB) { return new Break(this.lastPos); }
         continue;
       }
-
+    
       // if not handled already, use the pair table
       let shouldBreak = false;
       switch (pairTable[this.curClass][this.nextClass]) {
         case DI_BRK: // Direct break
           shouldBreak = true;
           break;
-
+        
         case IN_BRK: // possible indirect break
           shouldBreak = lastClass === SP;
           break;
-
+          
         case CI_BRK:
           shouldBreak = lastClass === SP;
           if (!shouldBreak) { continue; }
           break;
-
+          
         case CP_BRK: // prohibited for combining marks
           if (lastClass !== SP) { continue; }
           break;
       }
-
+        
       this.curClass = this.nextClass;
       if (shouldBreak) {
         return new Break(this.lastPos);
       }
     }
-
+    
     if (this.pos >= this.string.length) {
       if (this.lastPos < this.string.length) {
         this.lastPos = this.string.length;
@@ -58895,7 +59628,7 @@ class LineBreaker {
     }
   }
 };
-
+          
 module.exports = LineBreaker;
 
 },{"./classes":230,"./pairs":232,"base64-js":228,"unicode-trie":229}],232:[function(require,module,exports){
@@ -58905,7 +59638,7 @@ exports.IN_BRK = (IN_BRK = 1); // Indirect break opportunity
 exports.CI_BRK = (CI_BRK = 2); // Indirect break opportunity for combining marks
 exports.CP_BRK = (CP_BRK = 3); // Prohibited break for combining marks
 exports.PR_BRK = (PR_BRK = 4); // Prohibited break
-
+      
 // table generated from http://www.unicode.org/reports/tr14/#Table2
 exports.pairTable = [
   [PR_BRK, PR_BRK, PR_BRK, PR_BRK, PR_BRK, PR_BRK, PR_BRK, PR_BRK, PR_BRK, PR_BRK, PR_BRK, PR_BRK, PR_BRK, PR_BRK, PR_BRK, PR_BRK, PR_BRK, PR_BRK, PR_BRK, PR_BRK, PR_BRK, CP_BRK, PR_BRK, PR_BRK, PR_BRK, PR_BRK, PR_BRK, PR_BRK, PR_BRK],
@@ -60783,7 +61516,7 @@ function indexOf(xs, x) {
   return -1;
 }
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./_stream_duplex":237,"./internal/streams/BufferList":242,"./internal/streams/destroy":243,"./internal/streams/stream":244,"_process":235,"core-util-is":183,"events":222,"inherits":225,"isarray":227,"process-nextick-args":234,"safe-buffer":269,"string_decoder/":245,"util":43}],240:[function(require,module,exports){
+},{"./_stream_duplex":237,"./internal/streams/BufferList":242,"./internal/streams/destroy":243,"./internal/streams/stream":244,"_process":235,"core-util-is":183,"events":222,"inherits":225,"isarray":227,"process-nextick-args":234,"safe-buffer":268,"string_decoder/":270,"util":43}],240:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -61688,7 +62421,7 @@ Writable.prototype._destroy = function (err, cb) {
   cb(err);
 };
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("timers").setImmediate)
-},{"./_stream_duplex":237,"./internal/streams/destroy":243,"./internal/streams/stream":244,"_process":235,"core-util-is":183,"inherits":225,"process-nextick-args":234,"safe-buffer":269,"timers":271,"util-deprecate":276}],242:[function(require,module,exports){
+},{"./_stream_duplex":237,"./internal/streams/destroy":243,"./internal/streams/stream":244,"_process":235,"core-util-is":183,"inherits":225,"process-nextick-args":234,"safe-buffer":268,"timers":271,"util-deprecate":276}],242:[function(require,module,exports){
 'use strict';
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -61768,7 +62501,7 @@ if (util && util.inspect && util.inspect.custom) {
     return this.constructor.name + ' ' + obj;
   };
 }
-},{"safe-buffer":269,"util":43}],243:[function(require,module,exports){
+},{"safe-buffer":268,"util":43}],243:[function(require,module,exports){
 'use strict';
 
 /*<replacement>*/
@@ -61847,306 +62580,9 @@ module.exports = {
 module.exports = require('events').EventEmitter;
 
 },{"events":222}],245:[function(require,module,exports){
-// Copyright Joyent, Inc. and other Node contributors.
-//
-// Permission is hereby granted, free of charge, to any person obtaining a
-// copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to permit
-// persons to whom the Software is furnished to do so, subject to the
-// following conditions:
-//
-// The above copyright notice and this permission notice shall be included
-// in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-// USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-'use strict';
-
-/*<replacement>*/
-
-var Buffer = require('safe-buffer').Buffer;
-/*</replacement>*/
-
-var isEncoding = Buffer.isEncoding || function (encoding) {
-  encoding = '' + encoding;
-  switch (encoding && encoding.toLowerCase()) {
-    case 'hex':case 'utf8':case 'utf-8':case 'ascii':case 'binary':case 'base64':case 'ucs2':case 'ucs-2':case 'utf16le':case 'utf-16le':case 'raw':
-      return true;
-    default:
-      return false;
-  }
-};
-
-function _normalizeEncoding(enc) {
-  if (!enc) return 'utf8';
-  var retried;
-  while (true) {
-    switch (enc) {
-      case 'utf8':
-      case 'utf-8':
-        return 'utf8';
-      case 'ucs2':
-      case 'ucs-2':
-      case 'utf16le':
-      case 'utf-16le':
-        return 'utf16le';
-      case 'latin1':
-      case 'binary':
-        return 'latin1';
-      case 'base64':
-      case 'ascii':
-      case 'hex':
-        return enc;
-      default:
-        if (retried) return; // undefined
-        enc = ('' + enc).toLowerCase();
-        retried = true;
-    }
-  }
-};
-
-// Do not cache `Buffer.isEncoding` when checking encoding names as some
-// modules monkey-patch it to support additional encodings
-function normalizeEncoding(enc) {
-  var nenc = _normalizeEncoding(enc);
-  if (typeof nenc !== 'string' && (Buffer.isEncoding === isEncoding || !isEncoding(enc))) throw new Error('Unknown encoding: ' + enc);
-  return nenc || enc;
-}
-
-// StringDecoder provides an interface for efficiently splitting a series of
-// buffers into a series of JS strings without breaking apart multi-byte
-// characters.
-exports.StringDecoder = StringDecoder;
-function StringDecoder(encoding) {
-  this.encoding = normalizeEncoding(encoding);
-  var nb;
-  switch (this.encoding) {
-    case 'utf16le':
-      this.text = utf16Text;
-      this.end = utf16End;
-      nb = 4;
-      break;
-    case 'utf8':
-      this.fillLast = utf8FillLast;
-      nb = 4;
-      break;
-    case 'base64':
-      this.text = base64Text;
-      this.end = base64End;
-      nb = 3;
-      break;
-    default:
-      this.write = simpleWrite;
-      this.end = simpleEnd;
-      return;
-  }
-  this.lastNeed = 0;
-  this.lastTotal = 0;
-  this.lastChar = Buffer.allocUnsafe(nb);
-}
-
-StringDecoder.prototype.write = function (buf) {
-  if (buf.length === 0) return '';
-  var r;
-  var i;
-  if (this.lastNeed) {
-    r = this.fillLast(buf);
-    if (r === undefined) return '';
-    i = this.lastNeed;
-    this.lastNeed = 0;
-  } else {
-    i = 0;
-  }
-  if (i < buf.length) return r ? r + this.text(buf, i) : this.text(buf, i);
-  return r || '';
-};
-
-StringDecoder.prototype.end = utf8End;
-
-// Returns only complete characters in a Buffer
-StringDecoder.prototype.text = utf8Text;
-
-// Attempts to complete a partial non-UTF-8 character using bytes from a Buffer
-StringDecoder.prototype.fillLast = function (buf) {
-  if (this.lastNeed <= buf.length) {
-    buf.copy(this.lastChar, this.lastTotal - this.lastNeed, 0, this.lastNeed);
-    return this.lastChar.toString(this.encoding, 0, this.lastTotal);
-  }
-  buf.copy(this.lastChar, this.lastTotal - this.lastNeed, 0, buf.length);
-  this.lastNeed -= buf.length;
-};
-
-// Checks the type of a UTF-8 byte, whether it's ASCII, a leading byte, or a
-// continuation byte. If an invalid byte is detected, -2 is returned.
-function utf8CheckByte(byte) {
-  if (byte <= 0x7F) return 0;else if (byte >> 5 === 0x06) return 2;else if (byte >> 4 === 0x0E) return 3;else if (byte >> 3 === 0x1E) return 4;
-  return byte >> 6 === 0x02 ? -1 : -2;
-}
-
-// Checks at most 3 bytes at the end of a Buffer in order to detect an
-// incomplete multi-byte UTF-8 character. The total number of bytes (2, 3, or 4)
-// needed to complete the UTF-8 character (if applicable) are returned.
-function utf8CheckIncomplete(self, buf, i) {
-  var j = buf.length - 1;
-  if (j < i) return 0;
-  var nb = utf8CheckByte(buf[j]);
-  if (nb >= 0) {
-    if (nb > 0) self.lastNeed = nb - 1;
-    return nb;
-  }
-  if (--j < i || nb === -2) return 0;
-  nb = utf8CheckByte(buf[j]);
-  if (nb >= 0) {
-    if (nb > 0) self.lastNeed = nb - 2;
-    return nb;
-  }
-  if (--j < i || nb === -2) return 0;
-  nb = utf8CheckByte(buf[j]);
-  if (nb >= 0) {
-    if (nb > 0) {
-      if (nb === 2) nb = 0;else self.lastNeed = nb - 3;
-    }
-    return nb;
-  }
-  return 0;
-}
-
-// Validates as many continuation bytes for a multi-byte UTF-8 character as
-// needed or are available. If we see a non-continuation byte where we expect
-// one, we "replace" the validated continuation bytes we've seen so far with
-// a single UTF-8 replacement character ('\ufffd'), to match v8's UTF-8 decoding
-// behavior. The continuation byte check is included three times in the case
-// where all of the continuation bytes for a character exist in the same buffer.
-// It is also done this way as a slight performance increase instead of using a
-// loop.
-function utf8CheckExtraBytes(self, buf, p) {
-  if ((buf[0] & 0xC0) !== 0x80) {
-    self.lastNeed = 0;
-    return '\ufffd';
-  }
-  if (self.lastNeed > 1 && buf.length > 1) {
-    if ((buf[1] & 0xC0) !== 0x80) {
-      self.lastNeed = 1;
-      return '\ufffd';
-    }
-    if (self.lastNeed > 2 && buf.length > 2) {
-      if ((buf[2] & 0xC0) !== 0x80) {
-        self.lastNeed = 2;
-        return '\ufffd';
-      }
-    }
-  }
-}
-
-// Attempts to complete a multi-byte UTF-8 character using bytes from a Buffer.
-function utf8FillLast(buf) {
-  var p = this.lastTotal - this.lastNeed;
-  var r = utf8CheckExtraBytes(this, buf, p);
-  if (r !== undefined) return r;
-  if (this.lastNeed <= buf.length) {
-    buf.copy(this.lastChar, p, 0, this.lastNeed);
-    return this.lastChar.toString(this.encoding, 0, this.lastTotal);
-  }
-  buf.copy(this.lastChar, p, 0, buf.length);
-  this.lastNeed -= buf.length;
-}
-
-// Returns all complete UTF-8 characters in a Buffer. If the Buffer ended on a
-// partial character, the character's bytes are buffered until the required
-// number of bytes are available.
-function utf8Text(buf, i) {
-  var total = utf8CheckIncomplete(this, buf, i);
-  if (!this.lastNeed) return buf.toString('utf8', i);
-  this.lastTotal = total;
-  var end = buf.length - (total - this.lastNeed);
-  buf.copy(this.lastChar, 0, end);
-  return buf.toString('utf8', i, end);
-}
-
-// For UTF-8, a replacement character is added when ending on a partial
-// character.
-function utf8End(buf) {
-  var r = buf && buf.length ? this.write(buf) : '';
-  if (this.lastNeed) return r + '\ufffd';
-  return r;
-}
-
-// UTF-16LE typically needs two bytes per character, but even if we have an even
-// number of bytes available, we need to check if we end on a leading/high
-// surrogate. In that case, we need to wait for the next two bytes in order to
-// decode the last character properly.
-function utf16Text(buf, i) {
-  if ((buf.length - i) % 2 === 0) {
-    var r = buf.toString('utf16le', i);
-    if (r) {
-      var c = r.charCodeAt(r.length - 1);
-      if (c >= 0xD800 && c <= 0xDBFF) {
-        this.lastNeed = 2;
-        this.lastTotal = 4;
-        this.lastChar[0] = buf[buf.length - 2];
-        this.lastChar[1] = buf[buf.length - 1];
-        return r.slice(0, -1);
-      }
-    }
-    return r;
-  }
-  this.lastNeed = 1;
-  this.lastTotal = 2;
-  this.lastChar[0] = buf[buf.length - 1];
-  return buf.toString('utf16le', i, buf.length - 1);
-}
-
-// For UTF-16LE we do not explicitly append special replacement characters if we
-// end on a partial character, we simply let v8 handle that.
-function utf16End(buf) {
-  var r = buf && buf.length ? this.write(buf) : '';
-  if (this.lastNeed) {
-    var end = this.lastTotal - this.lastNeed;
-    return r + this.lastChar.toString('utf16le', 0, end);
-  }
-  return r;
-}
-
-function base64Text(buf, i) {
-  var n = (buf.length - i) % 3;
-  if (n === 0) return buf.toString('base64', i);
-  this.lastNeed = 3 - n;
-  this.lastTotal = 3;
-  if (n === 1) {
-    this.lastChar[0] = buf[buf.length - 1];
-  } else {
-    this.lastChar[0] = buf[buf.length - 2];
-    this.lastChar[1] = buf[buf.length - 1];
-  }
-  return buf.toString('base64', i, buf.length - n);
-}
-
-function base64End(buf) {
-  var r = buf && buf.length ? this.write(buf) : '';
-  if (this.lastNeed) return r + this.lastChar.toString('base64', 0, 3 - this.lastNeed);
-  return r;
-}
-
-// Pass bytes on through for single-byte encodings (e.g. ascii, latin1, hex)
-function simpleWrite(buf) {
-  return buf.toString(this.encoding);
-}
-
-function simpleEnd(buf) {
-  return buf && buf.length ? this.write(buf) : '';
-}
-},{"safe-buffer":269}],246:[function(require,module,exports){
 module.exports = require('./readable').PassThrough
 
-},{"./readable":247}],247:[function(require,module,exports){
+},{"./readable":246}],246:[function(require,module,exports){
 exports = module.exports = require('./lib/_stream_readable.js');
 exports.Stream = exports;
 exports.Readable = exports;
@@ -62155,13 +62591,13 @@ exports.Duplex = require('./lib/_stream_duplex.js');
 exports.Transform = require('./lib/_stream_transform.js');
 exports.PassThrough = require('./lib/_stream_passthrough.js');
 
-},{"./lib/_stream_duplex.js":237,"./lib/_stream_passthrough.js":238,"./lib/_stream_readable.js":239,"./lib/_stream_transform.js":240,"./lib/_stream_writable.js":241}],248:[function(require,module,exports){
+},{"./lib/_stream_duplex.js":237,"./lib/_stream_passthrough.js":238,"./lib/_stream_readable.js":239,"./lib/_stream_transform.js":240,"./lib/_stream_writable.js":241}],247:[function(require,module,exports){
 module.exports = require('./readable').Transform
 
-},{"./readable":247}],249:[function(require,module,exports){
+},{"./readable":246}],248:[function(require,module,exports){
 module.exports = require('./lib/_stream_writable.js');
 
-},{"./lib/_stream_writable.js":241}],250:[function(require,module,exports){
+},{"./lib/_stream_writable.js":241}],249:[function(require,module,exports){
 /**
  * Copyright (c) 2014-present, Facebook, Inc.
  *
@@ -62198,7 +62634,7 @@ if (hadRuntime) {
   }
 }
 
-},{"./runtime":251}],251:[function(require,module,exports){
+},{"./runtime":250}],250:[function(require,module,exports){
 /**
  * Copyright (c) 2014-present, Facebook, Inc.
  *
@@ -62927,7 +63363,7 @@ if (hadRuntime) {
   (function() { return this })() || Function("return this")()
 );
 
-},{}],252:[function(require,module,exports){
+},{}],251:[function(require,module,exports){
 (function () {
     var key, val, _ref, _ref1;
     exports.EncodeStream = require('./src/EncodeStream');
@@ -62954,7 +63390,7 @@ if (hadRuntime) {
         exports[key] = val;
     }
 }.call(this));
-},{"./src/Array":253,"./src/Bitfield":254,"./src/Boolean":255,"./src/Buffer":256,"./src/DecodeStream":257,"./src/EncodeStream":258,"./src/Enum":259,"./src/LazyArray":260,"./src/Number":261,"./src/Optional":262,"./src/Pointer":263,"./src/Reserved":264,"./src/String":265,"./src/Struct":266,"./src/VersionedStruct":267}],253:[function(require,module,exports){
+},{"./src/Array":252,"./src/Bitfield":253,"./src/Boolean":254,"./src/Buffer":255,"./src/DecodeStream":256,"./src/EncodeStream":257,"./src/Enum":258,"./src/LazyArray":259,"./src/Number":260,"./src/Optional":261,"./src/Pointer":262,"./src/Reserved":263,"./src/String":264,"./src/Struct":265,"./src/VersionedStruct":266}],252:[function(require,module,exports){
 (function () {
     var ArrayT, NumberT, utils;
     NumberT = require('./Number').Number;
@@ -63041,7 +63477,7 @@ if (hadRuntime) {
     }();
     module.exports = ArrayT;
 }.call(this));
-},{"./Number":261,"./utils":268}],254:[function(require,module,exports){
+},{"./Number":260,"./utils":267}],253:[function(require,module,exports){
 (function () {
     var Bitfield;
     Bitfield = function () {
@@ -63083,7 +63519,7 @@ if (hadRuntime) {
     }();
     module.exports = Bitfield;
 }.call(this));
-},{}],255:[function(require,module,exports){
+},{}],254:[function(require,module,exports){
 (function () {
     var BooleanT;
     BooleanT = function () {
@@ -63103,7 +63539,7 @@ if (hadRuntime) {
     }();
     module.exports = BooleanT;
 }.call(this));
-},{}],256:[function(require,module,exports){
+},{}],255:[function(require,module,exports){
 (function () {
     var BufferT, NumberT, utils;
     utils = require('./utils');
@@ -63133,7 +63569,7 @@ if (hadRuntime) {
     }();
     module.exports = BufferT;
 }.call(this));
-},{"./Number":261,"./utils":268}],257:[function(require,module,exports){
+},{"./Number":260,"./utils":267}],256:[function(require,module,exports){
 (function (Buffer){
 (function () {
     var DecodeStream, iconv;
@@ -63224,7 +63660,7 @@ if (hadRuntime) {
     module.exports = DecodeStream;
 }.call(this));
 }).call(this,require("buffer").Buffer)
-},{"buffer":58,"iconv-lite":57}],258:[function(require,module,exports){
+},{"buffer":58,"iconv-lite":57}],257:[function(require,module,exports){
 (function (Buffer){
 (function () {
     var DecodeStream, EncodeStream, iconv, stream, __hasProp = {}.hasOwnProperty, __extends = function (child, parent) {
@@ -63367,7 +63803,7 @@ if (hadRuntime) {
     module.exports = EncodeStream;
 }.call(this));
 }).call(this,require("buffer").Buffer)
-},{"./DecodeStream":257,"buffer":58,"iconv-lite":57,"stream":270}],259:[function(require,module,exports){
+},{"./DecodeStream":256,"buffer":58,"iconv-lite":57,"stream":269}],258:[function(require,module,exports){
 (function () {
     var Enum;
     Enum = function () {
@@ -63395,7 +63831,7 @@ if (hadRuntime) {
     }();
     module.exports = Enum;
 }.call(this));
-},{}],260:[function(require,module,exports){
+},{}],259:[function(require,module,exports){
 (function () {
     var ArrayT, LazyArray, LazyArrayT, NumberT, inspect, utils, __hasProp = {}.hasOwnProperty, __extends = function (child, parent) {
             for (var key in parent) {
@@ -63486,7 +63922,7 @@ if (hadRuntime) {
     }();
     module.exports = LazyArrayT;
 }.call(this));
-},{"./Array":253,"./Number":261,"./utils":268,"util":278}],261:[function(require,module,exports){
+},{"./Array":252,"./Number":260,"./utils":267,"util":278}],260:[function(require,module,exports){
 (function () {
     var DecodeStream, Fixed, NumberT, __hasProp = {}.hasOwnProperty, __extends = function (child, parent) {
             for (var key in parent) {
@@ -63564,7 +64000,7 @@ if (hadRuntime) {
     exports.fixed32be = exports.fixed32 = new Fixed(32, 'BE');
     exports.fixed32le = new Fixed(32, 'LE');
 }.call(this));
-},{"./DecodeStream":257}],262:[function(require,module,exports){
+},{"./DecodeStream":256}],261:[function(require,module,exports){
 (function () {
     var Optional;
     Optional = function () {
@@ -63608,7 +64044,7 @@ if (hadRuntime) {
     }();
     module.exports = Optional;
 }.call(this));
-},{}],263:[function(require,module,exports){
+},{}],262:[function(require,module,exports){
 (function () {
     var Pointer, VoidPointer, utils;
     utils = require('./utils');
@@ -63769,7 +64205,7 @@ if (hadRuntime) {
     exports.Pointer = Pointer;
     exports.VoidPointer = VoidPointer;
 }.call(this));
-},{"./utils":268}],264:[function(require,module,exports){
+},{"./utils":267}],263:[function(require,module,exports){
 (function () {
     var Reserved, utils;
     utils = require('./utils');
@@ -63794,7 +64230,7 @@ if (hadRuntime) {
     }();
     module.exports = Reserved;
 }.call(this));
-},{"./utils":268}],265:[function(require,module,exports){
+},{"./utils":267}],264:[function(require,module,exports){
 (function (Buffer){
 (function () {
     var NumberT, StringT, utils;
@@ -63868,7 +64304,7 @@ if (hadRuntime) {
     module.exports = StringT;
 }.call(this));
 }).call(this,require("buffer").Buffer)
-},{"./Number":261,"./utils":268,"buffer":58}],266:[function(require,module,exports){
+},{"./Number":260,"./utils":267,"buffer":58}],265:[function(require,module,exports){
 (function () {
     var Struct, utils;
     utils = require('./utils');
@@ -63977,7 +64413,7 @@ if (hadRuntime) {
     }();
     module.exports = Struct;
 }.call(this));
-},{"./utils":268}],267:[function(require,module,exports){
+},{"./utils":267}],266:[function(require,module,exports){
 (function () {
     var Struct, VersionedStruct, __hasProp = {}.hasOwnProperty, __extends = function (child, parent) {
             for (var key in parent) {
@@ -64113,7 +64549,7 @@ if (hadRuntime) {
     }(Struct);
     module.exports = VersionedStruct;
 }.call(this));
-},{"./Struct":266}],268:[function(require,module,exports){
+},{"./Struct":265}],267:[function(require,module,exports){
 (function () {
     var NumberT, PropertyDescriptor;
     NumberT = require('./Number').Number;
@@ -64150,7 +64586,7 @@ if (hadRuntime) {
     }();
     exports.PropertyDescriptor = PropertyDescriptor;
 }.call(this));
-},{"./Number":261}],269:[function(require,module,exports){
+},{"./Number":260}],268:[function(require,module,exports){
 /* eslint-disable node/no-deprecated-api */
 var buffer = require('buffer')
 var Buffer = buffer.Buffer
@@ -64214,7 +64650,7 @@ SafeBuffer.allocUnsafeSlow = function (size) {
   return buffer.SlowBuffer(size)
 }
 
-},{"buffer":58}],270:[function(require,module,exports){
+},{"buffer":58}],269:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -64343,7 +64779,304 @@ Stream.prototype.pipe = function(dest, options) {
   return dest;
 };
 
-},{"events":222,"inherits":225,"readable-stream/duplex.js":236,"readable-stream/passthrough.js":246,"readable-stream/readable.js":247,"readable-stream/transform.js":248,"readable-stream/writable.js":249}],271:[function(require,module,exports){
+},{"events":222,"inherits":225,"readable-stream/duplex.js":236,"readable-stream/passthrough.js":245,"readable-stream/readable.js":246,"readable-stream/transform.js":247,"readable-stream/writable.js":248}],270:[function(require,module,exports){
+// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+'use strict';
+
+/*<replacement>*/
+
+var Buffer = require('safe-buffer').Buffer;
+/*</replacement>*/
+
+var isEncoding = Buffer.isEncoding || function (encoding) {
+  encoding = '' + encoding;
+  switch (encoding && encoding.toLowerCase()) {
+    case 'hex':case 'utf8':case 'utf-8':case 'ascii':case 'binary':case 'base64':case 'ucs2':case 'ucs-2':case 'utf16le':case 'utf-16le':case 'raw':
+      return true;
+    default:
+      return false;
+  }
+};
+
+function _normalizeEncoding(enc) {
+  if (!enc) return 'utf8';
+  var retried;
+  while (true) {
+    switch (enc) {
+      case 'utf8':
+      case 'utf-8':
+        return 'utf8';
+      case 'ucs2':
+      case 'ucs-2':
+      case 'utf16le':
+      case 'utf-16le':
+        return 'utf16le';
+      case 'latin1':
+      case 'binary':
+        return 'latin1';
+      case 'base64':
+      case 'ascii':
+      case 'hex':
+        return enc;
+      default:
+        if (retried) return; // undefined
+        enc = ('' + enc).toLowerCase();
+        retried = true;
+    }
+  }
+};
+
+// Do not cache `Buffer.isEncoding` when checking encoding names as some
+// modules monkey-patch it to support additional encodings
+function normalizeEncoding(enc) {
+  var nenc = _normalizeEncoding(enc);
+  if (typeof nenc !== 'string' && (Buffer.isEncoding === isEncoding || !isEncoding(enc))) throw new Error('Unknown encoding: ' + enc);
+  return nenc || enc;
+}
+
+// StringDecoder provides an interface for efficiently splitting a series of
+// buffers into a series of JS strings without breaking apart multi-byte
+// characters.
+exports.StringDecoder = StringDecoder;
+function StringDecoder(encoding) {
+  this.encoding = normalizeEncoding(encoding);
+  var nb;
+  switch (this.encoding) {
+    case 'utf16le':
+      this.text = utf16Text;
+      this.end = utf16End;
+      nb = 4;
+      break;
+    case 'utf8':
+      this.fillLast = utf8FillLast;
+      nb = 4;
+      break;
+    case 'base64':
+      this.text = base64Text;
+      this.end = base64End;
+      nb = 3;
+      break;
+    default:
+      this.write = simpleWrite;
+      this.end = simpleEnd;
+      return;
+  }
+  this.lastNeed = 0;
+  this.lastTotal = 0;
+  this.lastChar = Buffer.allocUnsafe(nb);
+}
+
+StringDecoder.prototype.write = function (buf) {
+  if (buf.length === 0) return '';
+  var r;
+  var i;
+  if (this.lastNeed) {
+    r = this.fillLast(buf);
+    if (r === undefined) return '';
+    i = this.lastNeed;
+    this.lastNeed = 0;
+  } else {
+    i = 0;
+  }
+  if (i < buf.length) return r ? r + this.text(buf, i) : this.text(buf, i);
+  return r || '';
+};
+
+StringDecoder.prototype.end = utf8End;
+
+// Returns only complete characters in a Buffer
+StringDecoder.prototype.text = utf8Text;
+
+// Attempts to complete a partial non-UTF-8 character using bytes from a Buffer
+StringDecoder.prototype.fillLast = function (buf) {
+  if (this.lastNeed <= buf.length) {
+    buf.copy(this.lastChar, this.lastTotal - this.lastNeed, 0, this.lastNeed);
+    return this.lastChar.toString(this.encoding, 0, this.lastTotal);
+  }
+  buf.copy(this.lastChar, this.lastTotal - this.lastNeed, 0, buf.length);
+  this.lastNeed -= buf.length;
+};
+
+// Checks the type of a UTF-8 byte, whether it's ASCII, a leading byte, or a
+// continuation byte. If an invalid byte is detected, -2 is returned.
+function utf8CheckByte(byte) {
+  if (byte <= 0x7F) return 0;else if (byte >> 5 === 0x06) return 2;else if (byte >> 4 === 0x0E) return 3;else if (byte >> 3 === 0x1E) return 4;
+  return byte >> 6 === 0x02 ? -1 : -2;
+}
+
+// Checks at most 3 bytes at the end of a Buffer in order to detect an
+// incomplete multi-byte UTF-8 character. The total number of bytes (2, 3, or 4)
+// needed to complete the UTF-8 character (if applicable) are returned.
+function utf8CheckIncomplete(self, buf, i) {
+  var j = buf.length - 1;
+  if (j < i) return 0;
+  var nb = utf8CheckByte(buf[j]);
+  if (nb >= 0) {
+    if (nb > 0) self.lastNeed = nb - 1;
+    return nb;
+  }
+  if (--j < i || nb === -2) return 0;
+  nb = utf8CheckByte(buf[j]);
+  if (nb >= 0) {
+    if (nb > 0) self.lastNeed = nb - 2;
+    return nb;
+  }
+  if (--j < i || nb === -2) return 0;
+  nb = utf8CheckByte(buf[j]);
+  if (nb >= 0) {
+    if (nb > 0) {
+      if (nb === 2) nb = 0;else self.lastNeed = nb - 3;
+    }
+    return nb;
+  }
+  return 0;
+}
+
+// Validates as many continuation bytes for a multi-byte UTF-8 character as
+// needed or are available. If we see a non-continuation byte where we expect
+// one, we "replace" the validated continuation bytes we've seen so far with
+// a single UTF-8 replacement character ('\ufffd'), to match v8's UTF-8 decoding
+// behavior. The continuation byte check is included three times in the case
+// where all of the continuation bytes for a character exist in the same buffer.
+// It is also done this way as a slight performance increase instead of using a
+// loop.
+function utf8CheckExtraBytes(self, buf, p) {
+  if ((buf[0] & 0xC0) !== 0x80) {
+    self.lastNeed = 0;
+    return '\ufffd';
+  }
+  if (self.lastNeed > 1 && buf.length > 1) {
+    if ((buf[1] & 0xC0) !== 0x80) {
+      self.lastNeed = 1;
+      return '\ufffd';
+    }
+    if (self.lastNeed > 2 && buf.length > 2) {
+      if ((buf[2] & 0xC0) !== 0x80) {
+        self.lastNeed = 2;
+        return '\ufffd';
+      }
+    }
+  }
+}
+
+// Attempts to complete a multi-byte UTF-8 character using bytes from a Buffer.
+function utf8FillLast(buf) {
+  var p = this.lastTotal - this.lastNeed;
+  var r = utf8CheckExtraBytes(this, buf, p);
+  if (r !== undefined) return r;
+  if (this.lastNeed <= buf.length) {
+    buf.copy(this.lastChar, p, 0, this.lastNeed);
+    return this.lastChar.toString(this.encoding, 0, this.lastTotal);
+  }
+  buf.copy(this.lastChar, p, 0, buf.length);
+  this.lastNeed -= buf.length;
+}
+
+// Returns all complete UTF-8 characters in a Buffer. If the Buffer ended on a
+// partial character, the character's bytes are buffered until the required
+// number of bytes are available.
+function utf8Text(buf, i) {
+  var total = utf8CheckIncomplete(this, buf, i);
+  if (!this.lastNeed) return buf.toString('utf8', i);
+  this.lastTotal = total;
+  var end = buf.length - (total - this.lastNeed);
+  buf.copy(this.lastChar, 0, end);
+  return buf.toString('utf8', i, end);
+}
+
+// For UTF-8, a replacement character is added when ending on a partial
+// character.
+function utf8End(buf) {
+  var r = buf && buf.length ? this.write(buf) : '';
+  if (this.lastNeed) return r + '\ufffd';
+  return r;
+}
+
+// UTF-16LE typically needs two bytes per character, but even if we have an even
+// number of bytes available, we need to check if we end on a leading/high
+// surrogate. In that case, we need to wait for the next two bytes in order to
+// decode the last character properly.
+function utf16Text(buf, i) {
+  if ((buf.length - i) % 2 === 0) {
+    var r = buf.toString('utf16le', i);
+    if (r) {
+      var c = r.charCodeAt(r.length - 1);
+      if (c >= 0xD800 && c <= 0xDBFF) {
+        this.lastNeed = 2;
+        this.lastTotal = 4;
+        this.lastChar[0] = buf[buf.length - 2];
+        this.lastChar[1] = buf[buf.length - 1];
+        return r.slice(0, -1);
+      }
+    }
+    return r;
+  }
+  this.lastNeed = 1;
+  this.lastTotal = 2;
+  this.lastChar[0] = buf[buf.length - 1];
+  return buf.toString('utf16le', i, buf.length - 1);
+}
+
+// For UTF-16LE we do not explicitly append special replacement characters if we
+// end on a partial character, we simply let v8 handle that.
+function utf16End(buf) {
+  var r = buf && buf.length ? this.write(buf) : '';
+  if (this.lastNeed) {
+    var end = this.lastTotal - this.lastNeed;
+    return r + this.lastChar.toString('utf16le', 0, end);
+  }
+  return r;
+}
+
+function base64Text(buf, i) {
+  var n = (buf.length - i) % 3;
+  if (n === 0) return buf.toString('base64', i);
+  this.lastNeed = 3 - n;
+  this.lastTotal = 3;
+  if (n === 1) {
+    this.lastChar[0] = buf[buf.length - 1];
+  } else {
+    this.lastChar[0] = buf[buf.length - 2];
+    this.lastChar[1] = buf[buf.length - 1];
+  }
+  return buf.toString('base64', i, buf.length - n);
+}
+
+function base64End(buf) {
+  var r = buf && buf.length ? this.write(buf) : '';
+  if (this.lastNeed) return r + this.lastChar.toString('base64', 0, 3 - this.lastNeed);
+  return r;
+}
+
+// Pass bytes on through for single-byte encodings (e.g. ascii, latin1, hex)
+function simpleWrite(buf) {
+  return buf.toString(this.encoding);
+}
+
+function simpleEnd(buf) {
+  return buf && buf.length ? this.write(buf) : '';
+}
+},{"safe-buffer":268}],271:[function(require,module,exports){
 (function (setImmediate,clearImmediate){
 var nextTick = require('process/browser.js').nextTick;
 var apply = Function.prototype.apply;
@@ -64436,10 +65169,10 @@ function Data(source, dest) {
   this.sourceIndex = 0;
   this.tag = 0;
   this.bitcount = 0;
-
+  
   this.dest = dest;
   this.destLen = 0;
-
+  
   this.ltree = new Tree();  /* dynamic length/symbol tree */
   this.dtree = new Tree();  /* dynamic distance tree */
 }
@@ -64581,7 +65314,7 @@ function tinf_decode_symbol(d, t) {
     d.tag |= d.source[d.sourceIndex++] << d.bitcount;
     d.bitcount += 8;
   }
-
+  
   var sum = 0, cur = 0, len = 0;
   var tag = d.tag;
 
@@ -64594,7 +65327,7 @@ function tinf_decode_symbol(d, t) {
     sum += t.table[len];
     cur -= t.table[len];
   } while (cur >= 0);
-
+  
   d.tag = tag;
   d.bitcount -= len;
 
@@ -64705,7 +65438,7 @@ function tinf_inflate_block_data(d, lt, dt) {
 function tinf_inflate_uncompressed_block(d) {
   var length, invlength;
   var i;
-
+  
   /* unread from bitbuffer */
   while (d.bitcount > 8) {
     d.sourceIndex--;
@@ -64778,7 +65511,7 @@ function tinf_uncompress(source, dest) {
     else
       return d.dest.subarray(0, d.destLen);
   }
-
+  
   return d.dest;
 }
 

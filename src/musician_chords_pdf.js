@@ -2,9 +2,7 @@
 // musician chords pdf script
 
 // ===== NODE PACKAGES =====
-const PDFDocument = require('./lib/pdfkit.standalone.js');
 const blobStream = require('blob-stream');
-
 
 // ===== UTILITY FUNCTIONS =====
 // --- TITLE CASE FUNCTION ---
