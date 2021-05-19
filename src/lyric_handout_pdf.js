@@ -2,8 +2,12 @@
 // lyric handout pdf script
 
 // ===== NODE PACKAGES =====
-const PDFDocument = require('./lib/pdfkit.standalone.js');
+// const PDFDocument = require('./lib/pdfkit.standalone.js');
+import * as PDFDocument from './lib/pdfkit.standalone.js'; // tylor thinks using import instead of require will allow build to build properly
+// const PDFDocument = require('pdfkit');
 const blobStream = require('blob-stream');
+
+// import pptxgen from 'pptxgenjs';
 
 
 // ===== UTILITY FUNCTIONS =====

@@ -3,6 +3,7 @@
 
 // ===== NODE PACKAGES =====
 const PDFDocument = require('./lib/pdfkit.standalone.js');
+// const PDFDocument = require('pdfkit');
 const blobStream = require('blob-stream');
 
 
